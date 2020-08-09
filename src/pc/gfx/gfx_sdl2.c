@@ -43,6 +43,10 @@
 # define FRAMERATE 30
 #endif
 
+#ifdef __ANDROID__
+extern int render_multiplier;
+#endif
+
 static SDL_Window *wnd;
 static SDL_GLContext ctx = NULL;
 static int inverted_scancode_table[512];
@@ -133,6 +137,7 @@ int test_vsync(void) {
 
     const float average = 4.0 * 1000.0 / (end - start);
 
+#ifndef __ANDROID__
     if (average > 27.0f && average < 33.0f) return 1;
     if (average > 57.0f && average < 63.0f) return 2;
     if (average > 86.0f && average < 94.0f) return 3;
@@ -140,6 +145,20 @@ int test_vsync(void) {
     if (average > 234.0f && average < 246.0f) return 8;
 
     return 0;
+#else
+    /*Android's vsync seems finicky but timer based sync seems unusable too.
+     * I think vsync does kind of work but not half-vsync and stuff like that.
+     * Let's try to render multiple times if neccessary to lower the framerate.
+     * I don't think this is a great solution but it works.
+     * On SGI models, turning vsync off will help with framerate, but the best is 60fps patch.
+     * The actual solution would be to render or copy the buffer to a texture
+     * and then render that to the screen.*/
+    render_multiplier = (average + 15) / 30;
+    if (render_multiplier == 0)
+        render_multiplier = 1;
+
+    return 1;
+#endif
 }
 
 static inline void gfx_sdl_set_vsync(const bool enabled) {
