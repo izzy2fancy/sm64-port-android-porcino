@@ -29,6 +29,7 @@
 #include "configfile.h"
 #include "controller/controller_api.h"
 #include "controller/controller_keyboard.h"
+#include "controller/controller_touchscreen.h"
 #include "fs/fs.h"
 
 #include "game/game_init.h"
@@ -221,6 +222,9 @@ void main_func(void) {
 
     gfx_init(wm_api, rendering_api, window_title);
     wm_api->set_keyboard_callbacks(keyboard_on_key_down, keyboard_on_key_up, keyboard_on_all_keys_up);
+#ifdef TOUCH_CONTROLS
+    wm_api->set_touchscreen_callbacks((void *)touch_down, (void *)touch_motion, (void *)touch_up);
+#endif
 
     if (audio_api == NULL && audio_sdl.init()) 
         audio_api = &audio_sdl;
