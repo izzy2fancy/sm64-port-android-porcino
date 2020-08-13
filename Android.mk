@@ -52,70 +52,20 @@ ULTRA_SRC_DIRS := $(addprefix $(LOCAL_PATH)/,$(ULTRA_SRC_DIRS))
 LEVEL_C_FILES := $(wildcard $(LOCAL_PATH)/levels/*/leveldata.c) $(wildcard $(LOCAL_PATH)/levels/*/script.c) $(wildcard $(LOCAL_PATH)/levels/*/geo.c)
 C_FILES := $(foreach dir,$(SRC_DIRS),$(wildcard $(dir)/*.c)) $(LEVEL_C_FILES)
 
-ULTRA_C_FILES := $(foreach dir,$(ULTRA_SRC_DIRS),$(wildcard $(dir)/*.c))
+ULTRA_C_FILES := \
+  alBnkfNew.c \
+  guLookAtRef.c \
+  guMtxF2L.c \
+  guNormalize.c \
+  guOrthoF.c \
+  guPerspectiveF.c \
+  guRotateF.c \
+  guScaleF.c \
+  guTranslateF.c \
+  ldiv.c
 
-# We need to keep this for now
-# If we're not N64 use below
-
-  ULTRA_C_FILES_SKIP := \
-    sqrtf.c \
-    string.c \
-    sprintf.c \
-    _Printf.c \
-    kdebugserver.c \
-    osInitialize.c \
-    func_802F7140.c \
-    func_802F71F0.c \
-    func_802F4A20.c \
-    EU_D_802f4330.c \
-    D_802F4380.c \
-    osLeoDiskInit.c \
-    osCreateThread.c \
-    osDestroyThread.c \
-    osStartThread.c \
-    osSetThreadPri.c \
-    osPiStartDma.c \
-    osPiRawStartDma.c \
-    osPiRawReadIo.c \
-    osPiGetCmdQueue.c \
-    osJamMesg.c \
-    osSendMesg.c \
-    osRecvMesg.c \
-    osSetEventMesg.c \
-    osTimer.c \
-    osSetTimer.c \
-    osSetTime.c \
-    osCreateViManager.c \
-    osViSetSpecialFeatures.c \
-    osVirtualToPhysical.c \
-    osViBlack.c \
-    osViSetEvent.c \
-    osViSetMode.c \
-    osViSwapBuffer.c \
-    osSpTaskLoadGo.c \
-    osCreatePiManager.c \
-    osGetTime.c \
-    osEepromProbe.c \
-    osEepromWrite.c \
-    osEepromLongWrite.c \
-    osEepromRead.c \
-    osEepromLongRead.c \
-    osContInit.c \
-    osContStartReadData.c \
-    osAiGetLength.c \
-    osAiSetFrequency.c \
-    osAiSetNextBuffer.c \
-    __osViInit.c \
-    __osSyncPutChars.c \
-    __osAtomicDec.c \
-    __osSiRawStartDma.c \
-    __osViSwapContext.c \
-    __osViGetCurrentContext.c \
-    __osDevMgrMain.c
-
-  ULTRA_C_FILES := $(filter-out $(addprefix $(LOCAL_PATH)/lib/src/,$(ULTRA_C_FILES_SKIP)),$(ULTRA_C_FILES))
-    
 C_FILES := $(filter-out $(LOCAL_PATH)/src/game/main.c,$(C_FILES))
+ULTRA_C_FILES := $(addprefix $(LOCAL_PATH)/lib/src/,$(ULTRA_C_FILES))
 
 GODDARD_C_FILES := $(foreach dir,$(GODDARD_SRC_DIRS),$(wildcard $(dir)/*.c))
 
