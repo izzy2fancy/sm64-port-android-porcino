@@ -1890,10 +1890,10 @@ index 0467495..fa4eb33 100644
  
  using namespace Microsoft::WRL; // For ComPtr
 diff --git a/src/pc/gfx/gfx_sdl2.c b/src/pc/gfx/gfx_sdl2.c
-index 25c9f06..a6461ae 100644
+index 5f4c690..de96bbd 100644
 --- a/src/pc/gfx/gfx_sdl2.c
 +++ b/src/pc/gfx/gfx_sdl2.c
-@@ -53,7 +53,7 @@ static void (*kb_all_keys_up)(void) = NULL;
+@@ -61,7 +61,7 @@ static void (*touch_up_callback)(void* event);
  // whether to use timer for frame control
  static bool use_timer = true;
  // time between consequtive game frames
@@ -1902,7 +1902,16 @@ index 25c9f06..a6461ae 100644
  
  const SDL_Scancode windows_scancode_table[] = {
    /*  0                        1                            2                         3                            4                     5                            6                            7  */
-@@ -142,7 +142,11 @@ static inline void gfx_sdl_set_vsync(const bool enabled) {
+@@ -153,7 +153,7 @@ int test_vsync(void) {
+      * On SGI models, turning vsync off will help with framerate, but the best is 60fps patch.
+      * The actual solution would be to render or copy the buffer to a texture
+      * and then render that to the screen.*/
+-    render_multiplier = (average + 15) / 30;
++    render_multiplier = (average + 30) / 60;
+     if (render_multiplier == 0)
+         render_multiplier = 1;
+ 
+@@ -165,7 +165,11 @@ static inline void gfx_sdl_set_vsync(const bool enabled) {
      if (enabled) {
          // try to detect refresh rate
          SDL_GL_SetSwapInterval(1);
@@ -1916,10 +1925,10 @@ index 25c9f06..a6461ae 100644
              printf("determined swap interval: %d\n", vblanks);
              SDL_GL_SetSwapInterval(vblanks);
 diff --git a/src/pc/pc_main.c b/src/pc/pc_main.c
-index ed6ee74..63679ad 100644
+index a3c9817..8c61830 100644
 --- a/src/pc/pc_main.c
 +++ b/src/pc/pc_main.c
-@@ -83,6 +83,25 @@ void send_display_list(struct SPTask *spTask) {
+@@ -84,6 +84,25 @@ void send_display_list(struct SPTask *spTask) {
  #define SAMPLES_LOW 528
  #endif
  
@@ -1945,7 +1954,7 @@ index ed6ee74..63679ad 100644
  void produce_one_frame(void) {
      gfx_start_frame();
  
-@@ -110,6 +129,11 @@ void produce_one_frame(void) {
+@@ -111,6 +130,11 @@ void produce_one_frame(void) {
      audio_api->play((u8 *)audio_buffer, 2 * num_audio_samples * 4);
  
      gfx_end_frame();
