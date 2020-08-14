@@ -34,6 +34,7 @@ OSX_BUILD ?= 0
 TARGET_ARCH ?= native
 TARGET_BITS ?= 0
 
+TOUCHCONTROLS ?= 1
 # Disable better camera by default
 BETTERCAMERA ?= 0
 # Disable no drawing distance by default
@@ -539,6 +540,10 @@ else
 endif
 
 # Check for enhancement options
+ifeq ($(TOUCHCONTROLS),1)
+  CC_CHECK += -DTOUCHCONTROLS
+  CFLAGS += -DTOUCHCONTROLS
+endif
 
 # Check for Puppycam option
 ifeq ($(BETTERCAMERA),1)

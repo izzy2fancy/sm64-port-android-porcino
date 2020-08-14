@@ -148,11 +148,11 @@ void touch_up(struct TouchEvent* event) {
 }
 
 ALIGNED8 static const u8 texture_button[] = {
-#include "textures/touchcontrols/touch_button.inc.c"
+#include "textures/touchcontrols/touch_button.rgba16.inc.c"
 };
 
 ALIGNED8 static const u8 texture_button_dark[] = {
-#include "textures/touchcontrols/touch_button_dark.inc.c"
+#include "textures/touchcontrols/touch_button_dark.rgba16.inc.c"
 };
 
 //Sprite drawing code stolen from src/game/print.c
