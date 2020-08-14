@@ -172,12 +172,20 @@ static void on_anim_frame(double time) {
 }
 #endif
 
+#ifdef __ANDROID__
+extern const char* SDL_AndroidGetExternalStoragePath();
+#endif
+
 void main_func(void) {
     static u64 pool[0x165000/8 / 4 * sizeof(void *)];
     main_pool_init(pool, pool + sizeof(pool) / sizeof(pool[0]));
     gEffectsMemoryPool = mem_pool_init(0x4000, MEMORY_POOL_LEFT);
 
+#ifndef __ANDROID__
     const char *gamedir = gCLIOpts.GameDir[0] ? gCLIOpts.GameDir : FS_BASEDIR;
+#else
+    const char *gamedir = SDL_AndroidGetExternalStoragePath();
+#endif
     const char *userpath = gCLIOpts.SavePath[0] ? gCLIOpts.SavePath : sys_user_path();
     fs_init(sys_ropaths, gamedir, userpath);
 
