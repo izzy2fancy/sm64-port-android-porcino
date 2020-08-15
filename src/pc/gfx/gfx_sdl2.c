@@ -397,7 +397,15 @@ static void gfx_sdl_set_touchscreen_callbacks(void (*down)(void* event), void (*
 }
 
 static bool gfx_sdl_start_frame(void) {
-    return true;
+    static Uint32 last_time = 0;
+    bool ret = true;
+    Uint32 ticks = SDL_GetTicks();
+    if ((last_time == 0) || (last_time + 10000 < ticks))
+        last_time = ticks;
+    if (last_time + frame_time < ticks)
+        ret = false;
+    last_time += frame_time;
+    return ret;
 }
 
 static inline void sync_framerate_with_timer(void) {
