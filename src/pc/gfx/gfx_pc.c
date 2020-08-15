@@ -1796,7 +1796,7 @@ void gfx_run(Gfx *commands) {
     dropped_frame = false;
     
 #ifdef __ANDROID__
-    for (int i = 0; i < render_multiplier; i++) {
+    for (int i = 0; i < (configWindow.vsync ? render_multiplier : 1); i++) {
         double t0 = gfx_wapi->get_time();
         gfx_rapi->start_frame();
         gfx_run_dl(commands);
