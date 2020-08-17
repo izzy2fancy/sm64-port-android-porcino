@@ -79,6 +79,7 @@ GODDARD_C_FILES := $(foreach dir,$(GODDARD_SRC_DIRS),$(wildcard $(dir)/*.c))
 GENERATED_C_FILES := $(PC_BUILD_DIR)/assets/mario_anim_data.c $(PC_BUILD_DIR)/assets/demo_data.c \
   $(addprefix $(PC_BUILD_DIR)/bin/,$(addsuffix _skybox.c,$(notdir $(basename $(wildcard $(LOCAL_PATH)/textures/skyboxes/*.png)))))
 
+LOCAL_SHORT_COMMANDS := true
 LOCAL_SHARED_LIBRARIES := SDL2
 LOCAL_LDLIBS := -lEGL -lGLESv2 -llog
 LOCAL_C_INCLUDES := $(LOCAL_PATH)/$(SDL_PATH)/include $(LOCAL_PATH)/include $(LOCAL_PATH)/src $(PC_BUILD_DIR) $(PC_BUILD_DIR)/include
