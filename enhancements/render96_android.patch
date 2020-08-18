@@ -1,5 +1,5 @@
 diff --git a/Android.mk b/Android.mk
-index 606b127..b060768 100644
+index 5e5da57..3f37941 100644
 --- a/Android.mk
 +++ b/Android.mk
 @@ -16,13 +16,13 @@ VERSION ?= us
@@ -27,8 +27,17 @@ index 606b127..b060768 100644
  SRC_DIRS := $(addprefix $(LOCAL_PATH)/,$(SRC_DIRS))
  
  GODDARD_SRC_DIRS := src/goddard src/goddard/dynlists
+@@ -76,7 +76,7 @@ ULTRA_C_FILES := $(addprefix $(LOCAL_PATH)/lib/src/,$(ULTRA_C_FILES))
+ 
+ GODDARD_C_FILES := $(foreach dir,$(GODDARD_SRC_DIRS),$(wildcard $(dir)/*.c))
+ 
+-GENERATED_C_FILES := $(PC_BUILD_DIR)/assets/mario_anim_data.c $(PC_BUILD_DIR)/assets/demo_data.c \
++GENERATED_C_FILES := $(PC_BUILD_DIR)/assets/mario_anim_data.c $(PC_BUILD_DIR)/assets/luigi_anim_data.c $(PC_BUILD_DIR)/assets/demo_data.c \
+   $(addprefix $(PC_BUILD_DIR)/bin/,$(addsuffix _skybox.c,$(notdir $(basename $(wildcard $(LOCAL_PATH)/textures/skyboxes/*.png)))))
+ 
+ LOCAL_SHORT_COMMANDS := true
 diff --git a/Makefile b/Makefile
-index 8385b99..ed349ba 100644
+index a6dbdf0..5d8c3e5 100644
 --- a/Makefile
 +++ b/Makefile
 @@ -34,6 +34,7 @@ OSX_BUILD ?= 0
@@ -39,7 +48,7 @@ index 8385b99..ed349ba 100644
  # Disable better camera by default
  BETTERCAMERA ?= 0
  # Disable no drawing distance by default
-@@ -539,6 +540,10 @@ else
+@@ -541,6 +542,10 @@ else
  endif
  
  # Check for enhancement options
