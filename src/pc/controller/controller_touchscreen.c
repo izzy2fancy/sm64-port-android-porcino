@@ -1,11 +1,11 @@
 //Feel free to use it in your port too, but please keep authorship!
 //Touch Controls made by: VDavid003
 #ifdef TOUCH_CONTROLS
+#include <ultra64.h>
 #include <PR/ultratypes.h>
 #include <PR/gbi.h>
 
 #include "config.h"
-#include <ultra64.h>
 #include "sm64.h"
 #include "game/game_init.h"
 #include "game/memory.h"

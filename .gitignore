@@ -26,6 +26,7 @@
 *.so
 *.so.*
 *.dylib
+!android/**/*.so
 
 # Executables
 *.exe
@@ -79,3 +80,6 @@ sm64config.txt
 !/assets/**/*custom*.bin
 !/assets/**/*custom*/**/*.bin
 !/textures/touchcontrols/*.png
+
+# SDL
+SDL/include

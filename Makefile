@@ -34,7 +34,7 @@ OSX_BUILD ?= 0
 TARGET_ARCH ?= native
 TARGET_BITS ?= 0
 
-TOUCHCONTROLS ?= 1
+TOUCH_CONTROLS ?= 1
 # Disable better camera by default
 BETTERCAMERA ?= 0
 # Disable no drawing distance by default
@@ -90,6 +90,13 @@ endif
 ifeq ($(TARGET_WEB),0)
   ifeq ($(HOST_OS),Windows)
     WINDOWS_BUILD := 1
+  else
+    ifneq ($(shell which termux-setup-storage),)
+      TARGET_ANDROID := 1
+      ifeq ($(shell dpkg -s apksigner | grep Version | sed "s/Version: //"),0.7-2)
+        OLD_APKSIGNER := 1
+      endif
+    endif
   endif
 endif
 
@@ -192,6 +199,10 @@ ifeq ($(TARGET_RPI),1) # Define RPi to change SDL2 title & GLES2 hints
       VERSION_CFLAGS += -DUSE_GLES
 endif
 
+ifeq ($(TARGET_ANDROID),1)
+      VERSION_CFLAGS += -DUSE_GLES
+endif
+
 ifeq ($(OSX_BUILD),1) # Modify GFX & SDL2 for OSX GL
      VERSION_CFLAGS += -DOSX_BUILD
 endif
@@ -264,12 +275,17 @@ EXE := $(BUILD_DIR)/$(TARGET).html
 	else
 	ifeq ($(WINDOWS_BUILD),1)
 		EXE := $(BUILD_DIR)/$(TARGET).exe
-
-		else # Linux builds/binary namer
-		ifeq ($(TARGET_RPI),1)
-			EXE := $(BUILD_DIR)/$(TARGET).arm
 		else
-			EXE := $(BUILD_DIR)/$(TARGET)
+		ifeq ($(TARGET_ANDROID),1)
+			EXE := $(BUILD_DIR)/libmain.so
+			APK := $(BUILD_DIR)/$(TARGET).unsigned.apk
+			APK_SIGNED := $(BUILD_DIR)/$(TARGET).apk
+			else # Linux builds/binary namer
+			ifeq ($(TARGET_RPI),1)
+				EXE := $(BUILD_DIR)/$(TARGET).arm
+				else
+				EXE := $(BUILD_DIR)/$(TARGET)
+			endif
 		endif
 	endif
 endif
@@ -428,6 +444,9 @@ SEG_FILES := $(SEGMENT_ELF_FILES) $(ACTOR_ELF_FILES) $(LEVEL_ELF_FILES)
 
 ##################### Compiler Options #######################
 INCLUDE_CFLAGS := -I include -I $(BUILD_DIR) -I $(BUILD_DIR)/include -I src -I .
+ifeq ($(TARGET_ANDROID),1)
+INCLUDE_CFLAGS += -I SDL/include
+endif
 ENDIAN_BITWIDTH := $(BUILD_DIR)/endian-and-bitwidth
 
 # Huge deleted N64 section was here
@@ -496,6 +515,8 @@ ifeq ($(WINDOW_API),DXGI)
 else ifeq ($(WINDOW_API),SDL2)
   ifeq ($(WINDOWS_BUILD),1)
     BACKEND_LDFLAGS += -lglew32 -lglu32 -lopengl32
+  else ifeq ($(TARGET_ANDROID),1)
+    BACKEND_LDFLAGS += -lGLESv2
   else ifeq ($(TARGET_RPI),1)
     BACKEND_LDFLAGS += -lGLESv2
   else ifeq ($(OSX_BUILD),1)
@@ -516,11 +537,16 @@ endif
 
 # SDL can be used by different systems, so we consolidate all of that shit into this
 ifeq ($(SDL_USED),2)
-  BACKEND_CFLAGS += -DHAVE_SDL2=1 `$(SDLCONFIG) --cflags`
-  ifeq ($(WINDOWS_BUILD),1)
-    BACKEND_LDFLAGS += `$(SDLCONFIG) --static-libs` -lsetupapi -luser32 -limm32 -lole32 -loleaut32 -lshell32 -lwinmm -lversion
+  ifeq ($(TARGET_ANDROID),1)
+    BACKEND_CFLAGS += -DHAVE_SDL2=1 
+    BACKEND_LDFLAGS += -lhidapi -lSDL2
   else
-    BACKEND_LDFLAGS += `$(SDLCONFIG) --libs`
+    BACKEND_CFLAGS += -DHAVE_SDL2=1 `$(SDLCONFIG) --cflags`
+    ifeq ($(WINDOWS_BUILD),1)
+      BACKEND_LDFLAGS += `$(SDLCONFIG) --static-libs` -lsetupapi -luser32 -limm32 -lole32 -loleaut32 -lshell32 -lwinmm -lversion
+    else
+      BACKEND_LDFLAGS += `$(SDLCONFIG) --libs`
+    endif
   endif
 endif
 
@@ -540,9 +566,9 @@ else
 endif
 
 # Check for enhancement options
-ifeq ($(TOUCHCONTROLS),1)
-  CC_CHECK += -DTOUCHCONTROLS
-  CFLAGS += -DTOUCHCONTROLS
+ifeq ($(TOUCH_CONTROLS),1)
+  CC_CHECK += -DTOUCH_CONTROLS
+  CFLAGS += -DTOUCH_CONTROLS
 endif
 
 # Check for Puppycam option
@@ -625,6 +651,19 @@ else ifeq ($(WINDOWS_BUILD),1)
 else ifeq ($(TARGET_RPI),1)
   LDFLAGS := $(OPT_FLAGS) -lm $(BACKEND_LDFLAGS) -no-pie
 
+else ifeq ($(TARGET_ANDROID),1)
+  ifneq ($(shell uname -m | grep "i.86"),)
+    ARCH_APK := x86
+  else ifeq ($(shell uname -m),x86_64)
+    ARCH_APK := x86_64
+  else ifeq ($(shell getconf LONG_BIT),64)
+    ARCH_APK := arm64-v8a
+  else
+    ARCH_APK := armeabi-v7a
+  endif
+  CFLAGS  += -fPIC
+  LDFLAGS := -L./android/lib/$(ARCH_APK)/ -lm $(BACKEND_LDFLAGS) -shared
+
 else ifeq ($(OSX_BUILD),1)
   LDFLAGS := -lm $(BACKEND_LDFLAGS) -no-pie -lpthread
 
@@ -665,7 +704,13 @@ ZEROTERM = $(PYTHON) $(TOOLS_DIR)/zeroterm.py
 
 ######################## Targets #############################
 
+ifeq ($(TARGET_ANDROID),1)
+all: $(APK_SIGNED)
+EXE_DEPEND := $(APK_SIGNED)
+else
 all: $(EXE)
+EXE_DEPEND := $(EXE)
+endif
 
 # thank you apple very cool
 ifeq ($(HOST_OS),Darwin)
@@ -686,7 +731,7 @@ all: $(BASEPACK_PATH)
 res: $(BASEPACK_PATH)
 
 # prepares the basepack.lst
-$(BASEPACK_LST): $(EXE)
+$(BASEPACK_LST): $(EXE_DEPEND)
 	@mkdir -p $(BUILD_DIR)/$(BASEDIR)
 	@echo -n > $(BASEPACK_LST)
 	@echo "$(BUILD_DIR)/sound/bank_sets sound/bank_sets" >> $(BASEPACK_LST)
@@ -976,6 +1021,26 @@ $(BUILD_DIR)/%.o: %.s
 	$(AS) $(ASFLAGS) -MD $(BUILD_DIR)/$*.d -o $@ $<
 
 
+ifeq ($(TARGET_ANDROID),1)
+APK_FILES := $(shell find android/ -type f)
+
+$(APK): $(EXE) $(APK_FILES)
+	cp -r android $(BUILD_DIR) && \
+	cp $(EXE) $(BUILD_DIR)/android/lib/$(ARCH_APK)/ && \
+	cd $(BUILD_DIR)/android && \
+	zip -r ../../../$@ ./* && \
+	cd ../../.. && \
+	rm -rf $(BUILD_DIR)/android
+
+ifeq ($(OLD_APKSIGNER),1)
+$(APK_SIGNED): $(APK)
+	apksigner $(BUILD_DIR)/keystore $< $@
+else
+$(APK_SIGNED): $(APK)
+	cp $< $@
+	apksigner sign --cert certificate.pem --key key.pk8 $@
+endif
+endif
 
 $(EXE): $(O_FILES) $(MIO0_FILES:.mio0=.o) $(SOUND_OBJ_FILES) $(ULTRA_O_FILES) $(GODDARD_O_FILES) $(BUILD_DIR)/$(RPC_LIBS)
 	$(LD) -L $(BUILD_DIR) -o $@ $(O_FILES) $(SOUND_OBJ_FILES) $(ULTRA_O_FILES) $(GODDARD_O_FILES) $(LDFLAGS)

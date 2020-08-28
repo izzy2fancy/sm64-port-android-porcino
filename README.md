@@ -1,3 +1,42 @@
+# sm64ex Android Port
+If you want to compile Super Mario 64 for Android on PC you'll probably want to clone [this repo](https://github.com/VDavid003/sm64-port-android-base) instead!
+If you want to compile on Android using [Termux](https://play.google.com/store/apps/details?id=com.termux), follow these instructions in Termux:
+
+**Install dependencies:**
+```sh
+pkg install git wget make python getconf zip apksigner clang
+```
+
+**Clone the repository:**
+```sh
+git clone https://github.com/VDavid003/sm64-port-android --branch termux_build
+cd sm64-port-android
+```
+
+**Copy in your baserom:**
+
+Do this using your default file manager (on AOSP, you can slide on the left and there will be a "Termux" option there), or using Termux
+```sh
+termux-setup-storage
+cp /sdcard/path/to/your/baserom.z64 ./baserom.us.z64
+```
+
+**Get SDL includes:**
+```sh
+./getSDL.sh
+```
+
+**Build:**
+```sh
+# if you have more cores available, you can increase the --jobs parameter
+make --jobs 4
+```
+
+**Enjoy your apk:**
+```sh
+ls -al build/us_pc/sm64.us.f3dex2e.apk
+```
+
 # sm64ex
 Fork of [sm64-port/sm64-port](https://github.com/sm64-port/sm64-port) with additional features. 
 
