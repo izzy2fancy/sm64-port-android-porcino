@@ -9,7 +9,7 @@ pkg install git wget make python getconf zip apksigner clang
 
 **Clone the repository:**
 ```sh
-git clone https://github.com/VDavid003/sm64-port-android --branch termux_build
+git clone https://github.com/VDavid003/sm64-port-android --branch ex/nightly
 cd sm64-port-android
 ```
 
