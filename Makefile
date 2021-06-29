@@ -1105,7 +1105,10 @@ $(BUILD_DIR)/%.o: %.s
 ifeq ($(TARGET_ANDROID),1)
 APK_FILES := $(shell find android/ -type f)
 
-$(APK): $(EXE) $(APK_FILES)
+android/lib/$(ARCH_APK)/libc++_shared.so:
+	cp $(PREFIX)/lib/libc++_shared.so $@
+
+$(APK): $(EXE) $(APK_FILES) android/lib/$(ARCH_APK)/libc++_shared.so
 	cp -r android $(BUILD_DIR) && \
 	cp $(EXE) $(BUILD_DIR)/android/lib/$(ARCH_APK)/ && \
 	cd $(BUILD_DIR)/android && \
