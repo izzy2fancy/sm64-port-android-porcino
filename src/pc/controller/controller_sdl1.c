@@ -1,11 +1,11 @@
-#ifdef CAPI_SDL2
+#ifdef CAPI_SDL1
 
 #include <stdio.h>
 #include <stdint.h>
 #include <stdbool.h>
 #include <math.h>
 
-#include <SDL2/SDL.h>
+#include <SDL/SDL.h>
 
 // Analog camera movement by Pathétique (github.com/vrmiguel), y0shin and Mors
 // Contribute or communicate bugs at github.com/vrmiguel/sm64-analog-camera
@@ -28,6 +28,16 @@
 #define MAX_JOYBUTTONS 32  // arbitrary; includes virtual keys for triggers
 #define AXIS_THRESHOLD (30 * 256)
 
+enum {
+    JOY_AXIS_LEFTX,
+    JOY_AXIS_LEFTY,
+    JOY_AXIS_RIGHTX,
+    JOY_AXIS_RIGHTY,
+    JOY_AXIS_LTRIG,
+    JOY_AXIS_RTRIG,
+    MAX_AXES,
+};
+
 int mouse_x;
 int mouse_y;
 
@@ -36,19 +46,22 @@ extern u8 newcam_mouse;
 #endif
 
 static bool init_ok;
-static bool haptics_enabled;
-static SDL_GameController *sdl_cntrl;
-static SDL_Haptic *sdl_haptic;
+static SDL_Joystick *sdl_joy;
 
 static u32 num_joy_binds = 0;
 static u32 num_mouse_binds = 0;
 static u32 joy_binds[MAX_JOYBINDS][2];
 static u32 mouse_binds[MAX_JOYBINDS][2];
+static int joy_axis_binds[MAX_AXES] = { 0, 1, 2, 3, 4, 5 };
 
 static bool joy_buttons[MAX_JOYBUTTONS] = { false };
 static u32 mouse_buttons = 0;
 static u32 last_mouse = VK_INVALID;
 static u32 last_joybutton = VK_INVALID;
+
+static int num_joy_axes = 0;
+static int num_joy_buttons = 0;
+static int num_joy_hats = 0;
 
 static inline void controller_add_binds(const u32 mask, const u32 *btns) {
     for (u32 i = 0; i < MAX_BINDS; ++i) {
@@ -89,29 +102,27 @@ static void controller_sdl_bind(void) {
 }
 
 static void controller_sdl_init(void) {
-    if (SDL_Init(SDL_INIT_GAMECONTROLLER | SDL_INIT_EVENTS) != 0) {
+    if (SDL_Init(SDL_INIT_JOYSTICK) != 0) {
         fprintf(stderr, "SDL init error: %s\n", SDL_GetError());
         return;
     }
 
-    haptics_enabled = (SDL_InitSubSystem(SDL_INIT_HAPTIC) == 0);
+    if (SDL_NumJoysticks() > 0)
+        sdl_joy = SDL_JoystickOpen(0);
 
-    // try loading an external gamecontroller mapping file
-    uint64_t gcsize = 0;
-    void *gcdata = fs_load_file("gamecontrollerdb.txt", &gcsize);
-    if (gcdata && gcsize) {
-        SDL_RWops *rw = SDL_RWFromConstMem(gcdata, gcsize);
-        if (rw) {
-            int nummaps = SDL_GameControllerAddMappingsFromRW(rw, SDL_TRUE);
-            if (nummaps >= 0)
-                printf("loaded %d controller mappings from 'gamecontrollerdb.txt'\n", nummaps);
-        }
-        free(gcdata);
+    if (sdl_joy) {
+        num_joy_axes = SDL_JoystickNumAxes(sdl_joy);
+        num_joy_buttons = SDL_JoystickNumButtons(sdl_joy);
+        num_joy_hats = SDL_JoystickNumHats(sdl_joy);
+
+        for (int i = 0; i < MAX_AXES; ++i)
+            if (i >= num_joy_axes)
+                joy_axis_binds[i] = -1;
     }
 
 #ifdef BETTERCAMERA
     if (newcam_mouse == 1)
-        SDL_SetRelativeMouseMode(SDL_TRUE);
+        SDL_WM_GrabInput(SDL_GRAB_ON);
     SDL_GetRelativeMouseState(&mouse_x, &mouse_y);
 #endif
 
@@ -120,42 +131,27 @@ static void controller_sdl_init(void) {
     init_ok = true;
 }
 
-static SDL_Haptic *controller_sdl_init_haptics(const int joy) {
-    if (!haptics_enabled) return NULL;
-
-    SDL_Haptic *hap = SDL_HapticOpen(joy);
-    if (!hap) return NULL;
-
-    if (SDL_HapticRumbleSupported(hap) != SDL_TRUE) {
-        SDL_HapticClose(hap);
-        return NULL;
-    }
-
-    if (SDL_HapticRumbleInit(hap) != 0) {
-        SDL_HapticClose(hap);
-        return NULL;
-    }
-
-    printf("controller %s has haptics support, rumble enabled\n", SDL_JoystickNameForIndex(joy));
-    return hap;
-}
-
 static inline void update_button(const int i, const bool new) {
     const bool pressed = !joy_buttons[i] && new;
     joy_buttons[i] = new;
     if (pressed) last_joybutton = i;
 }
 
+static inline int16_t get_axis(const int i) {
+    if (joy_axis_binds[i] >= 0)
+        return SDL_JoystickGetAxis(sdl_joy, i);
+    else
+        return 0;
+}
+
 static void controller_sdl_read(OSContPad *pad) {
-    if (!init_ok) {
-        return;
-    }
+    if (!init_ok) return;
 
 #ifdef BETTERCAMERA
     if (newcam_mouse == 1 && sCurrPlayMode != 2)
-        SDL_SetRelativeMouseMode(SDL_TRUE);
+        SDL_WM_GrabInput(SDL_GRAB_ON);
     else
-        SDL_SetRelativeMouseMode(SDL_FALSE);
+        SDL_WM_GrabInput(SDL_GRAB_OFF);
     
     u32 mouse = SDL_GetRelativeMouseState(&mouse_x, &mouse_y);
 
@@ -168,37 +164,17 @@ static void controller_sdl_read(OSContPad *pad) {
     mouse_buttons = mouse;
 #endif
 
-    SDL_GameControllerUpdate();
+    if (!sdl_joy) return;
 
-    if (sdl_cntrl != NULL && !SDL_GameControllerGetAttached(sdl_cntrl)) {
-        SDL_HapticClose(sdl_haptic);
-        SDL_GameControllerClose(sdl_cntrl);
-        sdl_cntrl = NULL;
-        sdl_haptic = NULL;
-    }
+    SDL_JoystickUpdate();
 
-    if (sdl_cntrl == NULL) {
-        for (int i = 0; i < SDL_NumJoysticks(); i++) {
-            if (SDL_IsGameController(i)) {
-                sdl_cntrl = SDL_GameControllerOpen(i);
-                if (sdl_cntrl != NULL) {
-                    sdl_haptic = controller_sdl_init_haptics(i);
-                    break;
-                }
-            }
-        }
-        if (sdl_cntrl == NULL) {
-            return;
-        }
-    }
+    int16_t leftx = get_axis(JOY_AXIS_LEFTX);
+    int16_t lefty = get_axis(JOY_AXIS_LEFTY);
+    int16_t rightx = get_axis(JOY_AXIS_RIGHTX);
+    int16_t righty = get_axis(JOY_AXIS_RIGHTY);
 
-    int16_t leftx = SDL_GameControllerGetAxis(sdl_cntrl, SDL_CONTROLLER_AXIS_LEFTX);
-    int16_t lefty = SDL_GameControllerGetAxis(sdl_cntrl, SDL_CONTROLLER_AXIS_LEFTY);
-    int16_t rightx = SDL_GameControllerGetAxis(sdl_cntrl, SDL_CONTROLLER_AXIS_RIGHTX);
-    int16_t righty = SDL_GameControllerGetAxis(sdl_cntrl, SDL_CONTROLLER_AXIS_RIGHTY);
-
-    int16_t ltrig = SDL_GameControllerGetAxis(sdl_cntrl, SDL_CONTROLLER_AXIS_TRIGGERLEFT);
-    int16_t rtrig = SDL_GameControllerGetAxis(sdl_cntrl, SDL_CONTROLLER_AXIS_TRIGGERRIGHT);
+    int16_t ltrig = get_axis(JOY_AXIS_LTRIG);
+    int16_t rtrig = get_axis(JOY_AXIS_RTRIG);
 
 #ifdef TARGET_WEB
     // Firefox has a bug: https://bugzilla.mozilla.org/show_bug.cgi?id=1606562
@@ -214,8 +190,8 @@ static void controller_sdl_read(OSContPad *pad) {
     }
 #endif
 
-    for (u32 i = 0; i < SDL_CONTROLLER_BUTTON_MAX; ++i) {
-        const bool new = SDL_GameControllerGetButton(sdl_cntrl, i);
+    for (int i = 0; i < num_joy_buttons; ++i) {
+        const bool new = SDL_JoystickGetButton(sdl_joy, i);
         update_button(i, new);
     }
 
@@ -262,15 +238,9 @@ static void controller_sdl_read(OSContPad *pad) {
     }
 }
 
-static void controller_sdl_rumble_play(f32 strength, f32 length) {
-    if (sdl_haptic)
-        SDL_HapticRumblePlay(sdl_haptic, strength, (u32)(length * 1000.0f));
-}
+static void controller_sdl_rumble_play(f32 strength, f32 length) { }
 
-static void controller_sdl_rumble_stop(void) {
-    if (sdl_haptic)
-        SDL_HapticRumbleStop(sdl_haptic);
-}
+static void controller_sdl_rumble_stop(void) { }
 
 static u32 controller_sdl_rawkey(void) {
     if (last_joybutton != VK_INVALID) {
@@ -290,23 +260,14 @@ static u32 controller_sdl_rawkey(void) {
 }
 
 static void controller_sdl_shutdown(void) {
-    if (SDL_WasInit(SDL_INIT_GAMECONTROLLER)) {
-        if (sdl_cntrl) {
-            SDL_GameControllerClose(sdl_cntrl);
-            sdl_cntrl = NULL;
+    if (SDL_WasInit(SDL_INIT_JOYSTICK)) {
+        if (sdl_joy) {
+            SDL_JoystickClose(sdl_joy);
+            sdl_joy = NULL;
         }
-        SDL_QuitSubSystem(SDL_INIT_GAMECONTROLLER);
+        SDL_QuitSubSystem(SDL_INIT_JOYSTICK);
     }
 
-    if (SDL_WasInit(SDL_INIT_HAPTIC)) {
-        if (sdl_haptic) {
-            SDL_HapticClose(sdl_haptic);
-            sdl_haptic = NULL;
-        }
-        SDL_QuitSubSystem(SDL_INIT_HAPTIC);
-    }
-
-    haptics_enabled = false;
     init_ok = false;
 }
 
@@ -321,4 +282,4 @@ struct ControllerAPI controller_sdl = {
     controller_sdl_shutdown
 };
 
-#endif // CAPI_SDL2
+#endif // CAPI_SDL1

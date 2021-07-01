@@ -112,7 +112,7 @@ index 802d97a..1b0d677 100644
  
  /** A node that allows an object to specify a different culling radius than the
 diff --git a/src/engine/surface_collision.c b/src/engine/surface_collision.c
-index 5b6775f..2c11e25 100644
+index 1da535b..49a5c03 100644
 --- a/src/engine/surface_collision.c
 +++ b/src/engine/surface_collision.c
 @@ -8,6 +8,7 @@
@@ -1890,19 +1890,10 @@ index 0467495..fa4eb33 100644
  
  using namespace Microsoft::WRL; // For ComPtr
 diff --git a/src/pc/gfx/gfx_sdl2.c b/src/pc/gfx/gfx_sdl2.c
-index 5f4c690..de96bbd 100644
+index 42b8541..388e137 100644
 --- a/src/pc/gfx/gfx_sdl2.c
 +++ b/src/pc/gfx/gfx_sdl2.c
-@@ -61,7 +61,7 @@ static void (*touch_up_callback)(void* event);
- // whether to use timer for frame control
- static bool use_timer = true;
- // time between consequtive game frames
--static const int frame_time = 1000 / FRAMERATE;
-+static const int frame_time = 1000 / (2 * FRAMERATE);
- 
- const SDL_Scancode windows_scancode_table[] = {
-   /*  0                        1                            2                         3                            4                     5                            6                            7  */
-@@ -153,11 +153,11 @@ int test_vsync(void) {
+@@ -161,11 +161,11 @@ static int test_vsync(void) {
       * On SGI models, turning vsync off will help with framerate, but the best is 60fps patch.
       * The actual solution would be to render or copy the buffer to a texture
       * and then render that to the screen.*/
@@ -1916,11 +1907,11 @@ index 5f4c690..de96bbd 100644
  #endif
  }
  
-@@ -165,7 +165,11 @@ static inline void gfx_sdl_set_vsync(const bool enabled) {
+@@ -173,7 +173,11 @@ static inline void gfx_sdl_set_vsync(const bool enabled) {
      if (enabled) {
          // try to detect refresh rate
          SDL_GL_SetSwapInterval(1);
--        const int vblanks = test_vsync();
+-        const int vblanks = gCLIOpts.SyncFrames ? (int)gCLIOpts.SyncFrames : test_vsync();
 +        int vblanks = test_vsync();
 +        if (vblanks & 1)
 +            vblanks = 0; // not divisible by 60, fuck that
@@ -1929,8 +1920,17 @@ index 5f4c690..de96bbd 100644
          if (vblanks) {
              printf("determined swap interval: %d\n", vblanks);
              SDL_GL_SetSwapInterval(vblanks);
+@@ -258,7 +262,7 @@ static void gfx_sdl_init(const char *window_title) {
+     gfx_sdl_set_fullscreen();
+ 
+     perf_freq = SDL_GetPerformanceFrequency();
+-    frame_time = perf_freq / FRAMERATE;
++    frame_time = perf_freq / (2 * FRAMERATE);
+ 
+     for (size_t i = 0; i < sizeof(windows_scancode_table) / sizeof(SDL_Scancode); i++) {
+         inverted_scancode_table[windows_scancode_table[i]] = i;
 diff --git a/src/pc/pc_main.c b/src/pc/pc_main.c
-index a3c9817..8c61830 100644
+index 5fda297..35d50db 100644
 --- a/src/pc/pc_main.c
 +++ b/src/pc/pc_main.c
 @@ -84,6 +84,25 @@ void send_display_list(struct SPTask *spTask) {

@@ -30,6 +30,9 @@ TARGET_WEB ?= 0
 # Makeflag to enable OSX fixes
 OSX_BUILD ?= 0
 
+# Enable -no-pie linker option
+NO_PIE ?= 1
+
 # Specify the target you are building for, TARGET_BITS=0 means native
 TARGET_ARCH ?= native
 TARGET_BITS ?= 0
@@ -59,11 +62,11 @@ NO_LDIV ?= 0
 
 # Renderers: GL, GL_LEGACY, D3D11, D3D12
 RENDER_API ?= GL
-# Window managers: SDL2, DXGI (forced if D3D11 or D3D12 in RENDER_API)
+# Window managers: SDL1, SDL2, DXGI (forced if D3D11 or D3D12 in RENDER_API)
 WINDOW_API ?= SDL2
-# Audio backends: SDL2
+# Audio backends: SDL1, SDL2
 AUDIO_API ?= SDL2
-# Controller backends (can have multiple, space separated): SDL2
+# Controller backends (can have multiple, space separated): SDL2, SDL1
 CONTROLLER_API ?= SDL2
 
 # Misc settings for EXTERNAL_DATA
@@ -501,7 +504,9 @@ SDLCONFIG := $(CROSS)sdl2-config
 BACKEND_CFLAGS := -DRAPI_$(RENDER_API)=1 -DWAPI_$(WINDOW_API)=1 -DAAPI_$(AUDIO_API)=1
 # can have multiple controller APIs
 BACKEND_CFLAGS += $(foreach capi,$(CONTROLLER_API),-DCAPI_$(capi)=1)
-BACKEND_LDFLAGS :=
+BACKEND_LDFLAG0S :=
+
+SDL1_USED := 0
 SDL2_USED := 0
 
 # for now, it's either SDL+GL or DXGI+DirectX, so choose based on WAPI
@@ -512,7 +517,7 @@ ifeq ($(WINDOW_API),DXGI)
   endif
   BACKEND_LDFLAGS += -ld3dcompiler -ldxgi -ldxguid
   BACKEND_LDFLAGS += -lsetupapi -ldinput8 -luser32 -lgdi32 -limm32 -lole32 -loleaut32 -lshell32 -lwinmm -lversion -luuid -static
-else ifeq ($(WINDOW_API),SDL2)
+else ifeq ($(findstring SDL,$(WINDOW_API)),SDL)
   ifeq ($(WINDOWS_BUILD),1)
     BACKEND_LDFLAGS += -lglew32 -lglu32 -lopengl32
   else ifeq ($(TARGET_ANDROID),1)
@@ -524,24 +529,35 @@ else ifeq ($(WINDOW_API),SDL2)
   else
     BACKEND_LDFLAGS += -lGL
   endif
-  SDL_USED := 2
 endif
 
-ifeq ($(AUDIO_API),SDL2)
-  SDL_USED := 2
+ifneq (,$(findstring SDL2,$(AUDIO_API)$(WINDOW_API)$(CONTROLLER_API)))
+  SDL2_USED := 1
 endif
 
-ifneq (,$(findstring SDL,$(CONTROLLER_API)))
-  SDL_USED := 2
+ifneq (,$(findstring SDL1,$(AUDIO_API)$(WINDOW_API)$(CONTROLLER_API)))
+  SDL1_USED := 1
+endif
+
+ifeq ($(SDL1_USED)$(SDL2_USED),11)
+  $(error Cannot link both SDL1 and SDL2 at the same time)
 endif
 
 # SDL can be used by different systems, so we consolidate all of that shit into this
-ifeq ($(SDL_USED),2)
+
+ifeq ($(SDL2_USED),1)
+  SDLCONFIG := $(CROSS)sdl2-config
+  BACKEND_CFLAGS += -DHAVE_SDL2=1
+else ifeq ($(SDL1_USED),1)
+  SDLCONFIG := $(CROSS)sdl-config
+  BACKEND_CFLAGS += -DHAVE_SDL1=1
+endif
+
+ifneq ($(SDL1_USED)$(SDL2_USED),00)
   ifeq ($(TARGET_ANDROID),1)
-    BACKEND_CFLAGS += -DHAVE_SDL2=1 
     BACKEND_LDFLAGS += -lhidapi -lSDL2
   else
-    BACKEND_CFLAGS += -DHAVE_SDL2=1 `$(SDLCONFIG) --cflags`
+    BACKEND_CFLAGS += `$(SDLCONFIG) --cflags`
     ifeq ($(WINDOWS_BUILD),1)
       BACKEND_LDFLAGS += `$(SDLCONFIG) --static-libs` -lsetupapi -luser32 -limm32 -lole32 -loleaut32 -lshell32 -lwinmm -lversion
     else
@@ -637,7 +653,7 @@ endif
 ASFLAGS := -I include -I $(BUILD_DIR) $(VERSION_ASFLAGS)
 
 ifeq ($(TARGET_WEB),1)
-LDFLAGS := -lm -lGL -lSDL2 -no-pie -s TOTAL_MEMORY=20MB -g4 --source-map-base http://localhost:8080/ -s "EXTRA_EXPORTED_RUNTIME_METHODS=['callMain']"
+  LDFLAGS := -lm -lGL -lSDL2 -no-pie -s TOTAL_MEMORY=64MB -g4 --source-map-base http://localhost:8080/ -s "EXTRA_EXPORTED_RUNTIME_METHODS=['callMain']"
 
 else ifeq ($(WINDOWS_BUILD),1)
   LDFLAGS := $(BITS) -march=$(TARGET_ARCH) -Llib -lpthread $(BACKEND_LDFLAGS) -static
@@ -668,9 +684,13 @@ else ifeq ($(OSX_BUILD),1)
   LDFLAGS := -lm $(BACKEND_LDFLAGS) -no-pie -lpthread
 
 else
-  LDFLAGS := $(BITS) -march=$(TARGET_ARCH) -lm $(BACKEND_LDFLAGS) -no-pie -lpthread
+  LDFLAGS := $(BITS) -march=$(TARGET_ARCH) -lm $(BACKEND_LDFLAGS) -lpthread -ldl
+  ifeq ($(NO_PIE), 1)
+    LDFLAGS += -no-pie
+  endif
+
   ifeq ($(DISCORDRPC),1)
-    LDFLAGS += -ldl -Wl,-rpath .
+    LDFLAGS += -Wl,-rpath .
   endif
 
 endif # End of LDFLAGS

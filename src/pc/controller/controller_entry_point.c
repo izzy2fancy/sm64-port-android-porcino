@@ -14,7 +14,9 @@
 
 static struct ControllerAPI *controller_implementations[] = {
     &controller_recorded_tas,
+    #if defined(CAPI_SDL2) || defined(CAPI_SDL1)
     &controller_sdl,
+    #endif
     &controller_keyboard,
 #ifdef TOUCH_CONTROLS
     &controller_touchscreen,
@@ -22,9 +24,8 @@ static struct ControllerAPI *controller_implementations[] = {
 };
 
 s32 osContInit(UNUSED OSMesgQueue *mq, u8 *controllerBits, UNUSED OSContStatus *status) {
-    for (size_t i = 0; i < sizeof(controller_implementations) / sizeof(struct ControllerAPI *); i++) {
+    for (size_t i = 0; i < sizeof(controller_implementations) / sizeof(struct ControllerAPI *); i++)
         controller_implementations[i]->init();
-    }
     *controllerBits = 1;
     return 0;
 }
@@ -32,12 +33,14 @@ s32 osContInit(UNUSED OSMesgQueue *mq, u8 *controllerBits, UNUSED OSContStatus *
 s32 osMotorStart(UNUSED void *pfs) {
     // Since rumble stops by osMotorStop, its duration is not nessecary.
     // Set it to 5 seconds and hope osMotorStop() is called in time.
-    controller_rumble_play(configRumbleStrength / 100.0f, 5.0f);
+    if (configRumbleStrength)
+        controller_rumble_play(configRumbleStrength / 100.0f, 5.0f);
     return 0;
 }
 
 s32 osMotorStop(UNUSED void *pfs) {
-    controller_rumble_stop();
+    if (configRumbleStrength)
+        controller_rumble_stop();
     return 0;
 }
 

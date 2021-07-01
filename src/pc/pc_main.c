@@ -177,10 +177,6 @@ extern const char* SDL_AndroidGetExternalStoragePath();
 #endif
 
 void main_func(void) {
-    static u64 pool[0x165000/8 / 4 * sizeof(void *)];
-    main_pool_init(pool, pool + sizeof(pool) / sizeof(pool[0]));
-    gEffectsMemoryPool = mem_pool_init(0x4000, MEMORY_POOL_LEFT);
-
 #ifndef __ANDROID__
     const char *gamedir = gCLIOpts.GameDir[0] ? gCLIOpts.GameDir : FS_BASEDIR;
 #else
@@ -195,6 +191,12 @@ void main_func(void) {
         configWindow.fullscreen = true;
     else if (gCLIOpts.FullScreen == 2)
         configWindow.fullscreen = false;
+
+    const size_t poolsize = gCLIOpts.PoolSize ? gCLIOpts.PoolSize : DEFAULT_POOL_SIZE;
+    u64 *pool = malloc(poolsize);
+    if (!pool) sys_fatal("Could not alloc %u bytes for main pool.\n", poolsize);
+    main_pool_init(pool, pool + poolsize / sizeof(pool[0]));
+    gEffectsMemoryPool = mem_pool_init(0x4000, MEMORY_POOL_LEFT);
 
     #if defined(WAPI_SDL1) || defined(WAPI_SDL2)
     wm_api = &gfx_sdl;
@@ -234,8 +236,10 @@ void main_func(void) {
     wm_api->set_touchscreen_callbacks((void *)touch_down, (void *)touch_motion, (void *)touch_up);
 #endif
 
+    #if defined(AAPI_SDL1) || defined(AAPI_SDL2)
     if (audio_api == NULL && audio_sdl.init()) 
         audio_api = &audio_sdl;
+    #endif
 
     if (audio_api == NULL) {
         audio_api = &audio_null;
