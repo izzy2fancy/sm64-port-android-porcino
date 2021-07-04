@@ -39,6 +39,9 @@ void bhv_piranha_plant_bubble_loop(void) {
 
     cur_obj_set_pos_relative(parent, 0, 72.0f, 180.0f);
 
+    if (frame == -1)
+        frame = 0;
+
     switch (o->oAction) {
         case PIRANHA_PLANT_BUBBLE_ACT_IDLE:
             cur_obj_disable_rendering();
