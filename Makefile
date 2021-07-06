@@ -468,7 +468,7 @@ else
   CXX := emcc
 endif
 
-LD := $(CC)
+LD := $(CXX) #We need some cpp support for DynOS here
 
 ifeq ($(DISCORDRPC),1)
   LD := $(CXX)
