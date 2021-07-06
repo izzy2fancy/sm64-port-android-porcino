@@ -58,6 +58,7 @@ ULTRA_SRC_DIRS := $(addprefix $(LOCAL_PATH)/,$(ULTRA_SRC_DIRS))
 # Source code files
 LEVEL_C_FILES := $(wildcard $(LOCAL_PATH)/levels/*/leveldata.c) $(wildcard $(LOCAL_PATH)/levels/*/script.c) $(wildcard $(LOCAL_PATH)/levels/*/geo.c)
 C_FILES := $(foreach dir,$(SRC_DIRS),$(wildcard $(dir)/*.c)) $(LEVEL_C_FILES)
+CXX_FILES := $(foreach dir,$(SRC_DIRS),$(wildcard $(dir)/*.cpp))
 
 ULTRA_C_FILES := \
   alBnkfNew.c \
@@ -102,6 +103,6 @@ ifeq ($(EXTERNAL_DATA),1)
   LOCAL_CFLAGS += -DEXTERNAL_DATA -DFS_BASEDIR="\"$(BASEDIR)\""
 endif
 
-LOCAL_SRC_FILES := $(C_FILES) $(GENERATED_C_FILES) $(ULTRA_C_FILES) $(GODDARD_C_FILES) $(LOCAL_PATH)/sound/sound_data.c
+LOCAL_SRC_FILES := $(C_FILES) $(CXX_FILES) $(GENERATED_C_FILES) $(ULTRA_C_FILES) $(GODDARD_C_FILES) $(LOCAL_PATH)/sound/sound_data.c
 
 include $(BUILD_SHARED_LIBRARY)
