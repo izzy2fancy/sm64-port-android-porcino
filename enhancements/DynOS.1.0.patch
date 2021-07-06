@@ -1,11 +1,14 @@
 diff --git a/Makefile b/Makefile
-index 621aedd..9f49dff 100644
+index 22dabaf..10c1868 100644
 --- a/Makefile
 +++ b/Makefile
-@@ -432,3 +432,4 @@ SEG_FILES := $(SEGMENT_ELF_FILES) $(ACTOR_ELF_FILES) $(LEVEL_ELF_FILES)
- INCLUDE_CFLAGS := -I include -I $(BUILD_DIR) -I $(BUILD_DIR)/include -I src -I .
+@@ -451,6 +451,7 @@ ifeq ($(TARGET_ANDROID),1)
+ INCLUDE_CFLAGS += -I SDL/include
+ endif
  ENDIAN_BITWIDTH := $(BUILD_DIR)/endian-and-bitwidth
 +include dynos.mk
+ 
+ # Huge deleted N64 section was here
  
 diff --git a/data/dynos.c.h b/data/dynos.c.h
 new file mode 100644
@@ -43,7 +46,7 @@ index 0000000..35a6241
 +#endif
 diff --git a/data/dynos.cpp.h b/data/dynos.cpp.h
 new file mode 100644
-index 0000000..febce95
+index 0000000..b84c816
 --- /dev/null
 +++ b/data/dynos.cpp.h
 @@ -0,0 +1,714 @@
@@ -633,9 +636,9 @@ index 0000000..febce95
 +
 +template <typename... Args>
 +void Print(const char *aFmt, Args... aArgs) {
-+    printf(aFmt, aArgs...);
-+    printf("\r\n");
-+    fflush(stdout);
++//    printf(aFmt, aArgs...); 
++//    printf("\r\n");
++//    fflush(stdout);
 +}
 +
 +#define PrintError(...) { \
@@ -662,7 +665,7 @@ index 0000000..febce95
 +// Main
 +//
 +
-+void DynOS_Init();
++extern "C" void DynOS_Init();
 +void DynOS_UpdateOpt(void *aPad);
 +void *DynOS_UpdateCmd(void *aCmd);
 +void DynOS_UpdateGfx();
@@ -4748,7 +4751,7 @@ index 0000000..f1a0b8a
 +
 diff --git a/data/dynos_main.cpp b/data/dynos_main.cpp
 new file mode 100644
-index 0000000..9605006
+index 0000000..63ca7de
 --- /dev/null
 +++ b/data/dynos_main.cpp
 @@ -0,0 +1,133 @@
@@ -4846,7 +4849,7 @@ index 0000000..9605006
 +// Init
 +//
 +
-+DYNOS_AT_STARTUP void DynOS_Init() {
++extern "C" void DynOS_Init() {
 +#ifdef OMM_DEFINES_H
 +    omm_opt_init();
 +#endif
@@ -7510,33 +7513,40 @@ diff --git a/include/types.h b/include/types.h
 index b3dc27e..e17be25 100644
 --- a/include/types.h
 +++ b/include/types.h
-@@ -107,4 +107,5 @@ struct GraphNode
+@@ -106,6 +106,7 @@ struct GraphNode
+     /*0x08*/ struct GraphNode *next;
      /*0x0C*/ struct GraphNode *parent;
      /*0x10*/ struct GraphNode *children;
 +    /*0x14*/ const void *georef;
  };
  
+ // struct AnimInfo?
 diff --git a/src/audio/seqplayer.c b/src/audio/seqplayer.c
 index 91146bb..9b95510 100644
 --- a/src/audio/seqplayer.c
 +++ b/src/audio/seqplayer.c
-@@ -2,4 +2,5 @@
+@@ -1,6 +1,7 @@
+ #include <PR/ultratypes.h>
  
  #include "data.h"
 +#include "data/dynos.c.h"
  #include "effects.h"
  #include "external.h"
-@@ -1445,4 +1446,5 @@ void sequence_channel_process_script(struct SequenceChannel *seqChannel) {
+ #include "heap.h"
+@@ -1444,6 +1445,7 @@ void sequence_channel_process_script(struct SequenceChannel *seqChannel) {
+                 // #define loBits (cmd & 0xf)
                  switch (cmd & 0xf0) {
                      case 0x00: // chan_testlayerfinished
 +                        if (!dynos_sanity_check_seq(loBits)) break;
                          if (seqChannel->layers[loBits] != NULL) {
                              value = seqChannel->layers[loBits]->finished;
+                         }
 diff --git a/src/engine/geo_layout.c b/src/engine/geo_layout.c
 index d071d1a..ecbc704 100644
 --- a/src/engine/geo_layout.c
 +++ b/src/engine/geo_layout.c
-@@ -791,5 +791,8 @@ struct GraphNode *process_geo_layout(struct AllocOnlyPool *pool, void *segptr) {
+@@ -790,6 +790,9 @@ struct GraphNode *process_geo_layout(struct AllocOnlyPool *pool, void *segptr) {
+     while (gGeoLayoutCommand != NULL) {
          GeoLayoutJumpTable[gGeoLayoutCommand[0x00]]();
      }
 -
@@ -7547,16 +7557,19 @@ index d071d1a..ecbc704 100644
      return gCurRootGraphNode;
  }
 diff --git a/src/engine/level_script.c b/src/engine/level_script.c
-index b623c7f..3f53bdf 100644
+index ff5d2e0..67703e3 100644
 --- a/src/engine/level_script.c
 +++ b/src/engine/level_script.c
-@@ -3,4 +3,5 @@
+@@ -2,6 +2,7 @@
+ #include <string.h>
  
  #include "sm64.h"
 +#include "data/dynos.c.h"
  #include "audio/external.h"
  #include "buffers/framebuffers.h"
-@@ -866,9 +867,13 @@ struct LevelCommand *level_script_execute(struct LevelCommand *cmd) {
+ #include "buffers/zbuffer.h"
+@@ -869,11 +870,15 @@ struct LevelCommand *level_script_execute(struct LevelCommand *cmd) {
+     sCurrentCmd = cmd;
  
      while (sScriptStatus == SCRIPT_RUNNING) {
 +        void *dynosCurrCmd = (void *) sCurrentCmd;
@@ -7569,12 +7582,13 @@ index b623c7f..3f53bdf 100644
      init_render_image();
 +    dynos_update_gfx();
      render_game();
-     end_master_display_list();
+ #ifdef TOUCH_CONTROLS
+     render_touch_controls();
 diff --git a/src/game/behaviors/ddd_pole.inc.c b/src/game/behaviors/ddd_pole.inc.c
 index 58d7d61..9d64bad 100644
 --- a/src/game/behaviors/ddd_pole.inc.c
 +++ b/src/game/behaviors/ddd_pole.inc.c
-@@ -1,4 +1,21 @@
+@@ -1,5 +1,22 @@
  
  void bhv_ddd_pole_init(void) {
 +#ifndef DYNOS_COOP
@@ -7596,11 +7610,13 @@ index 58d7d61..9d64bad 100644
 +
      if (!(save_file_get_flags() & (SAVE_FLAG_HAVE_KEY_2 | SAVE_FLAG_UNLOCKED_UPSTAIRS_DOOR))) {
          obj_mark_for_deletion(o);
+     } else {
 diff --git a/src/game/behaviors/ddd_sub.inc.c b/src/game/behaviors/ddd_sub.inc.c
 index d8479c6..51e9d90 100644
 --- a/src/game/behaviors/ddd_sub.inc.c
 +++ b/src/game/behaviors/ddd_sub.inc.c
-@@ -2,4 +2,19 @@
+@@ -1,6 +1,21 @@
+ // ddd_sub.c.inc
  
  void bhv_bowsers_sub_loop(void) {
 +#ifndef DYNOS_COOP
@@ -7620,17 +7636,21 @@ index d8479c6..51e9d90 100644
 +
      if (save_file_get_flags() & (SAVE_FLAG_HAVE_KEY_2 | SAVE_FLAG_UNLOCKED_UPSTAIRS_DOOR))
          obj_mark_for_deletion(o);
+ }
 diff --git a/src/game/game_init.c b/src/game/game_init.c
 index c2df451..c60f8d5 100644
 --- a/src/game/game_init.c
 +++ b/src/game/game_init.c
-@@ -2,4 +2,5 @@
+@@ -1,6 +1,7 @@
+ #include <ultra64.h>
  
  #include "sm64.h"
 +#include "data/dynos.c.h"
  #include "gfx_dimensions.h"
  #include "audio/external.h"
-@@ -385,7 +386,4 @@ void adjust_analog_stick(struct Controller *controller) {
+ #include "buffers/buffers.h"
+@@ -384,9 +385,6 @@ void adjust_analog_stick(struct Controller *controller) {
+ // if a demo sequence exists, this will run the demo
  // input list until it is complete. called every frame.
  void run_demo_inputs(void) {
 -    // eliminate the unused bits.
@@ -7638,33 +7658,40 @@ index c2df451..c60f8d5 100644
 -
      /*
          Check if a demo inputs list
-@@ -456,4 +454,5 @@ void read_controller_inputs(void) {
+         exists and if so, run the
+@@ -455,6 +453,7 @@ void read_controller_inputs(void) {
+     if (gControllerBits) {
          osRecvMesg(&gSIEventMesgQueue, &D_80339BEC, OS_MESG_BLOCK);
          osContGetReadData(&gControllerPads[0]);
 +        dynos_update_opt((void *) &gControllerPads[0]);
      }
      run_demo_inputs();
+ 
 diff --git a/src/game/object_helpers.c b/src/game/object_helpers.c
 index 22b45b3..4586cd9 100644
 --- a/src/game/object_helpers.c
 +++ b/src/game/object_helpers.c
-@@ -2744,4 +2744,6 @@ s32 cur_obj_has_model(u16 modelID) {
+@@ -2743,6 +2743,8 @@ s32 cur_obj_update_dialog_with_cutscene(s32 actionArg, s32 dialogFlags, s32 cuts
+ s32 cur_obj_has_model(u16 modelID) {
      if (o->header.gfx.sharedChild == gLoadedGraphNodes[modelID]) {
          return TRUE;
 +    } else if (o->header.gfx.sharedChild && gLoadedGraphNodes[modelID] && o->header.gfx.sharedChild->georef == gLoadedGraphNodes[modelID]->georef) {
 +        return TRUE;
      } else {
          return FALSE;
+     }
 diff --git a/src/game/options_menu.c b/src/game/options_menu.c
 index 56ebdeb..07cec56 100644
 --- a/src/game/options_menu.c
 +++ b/src/game/options_menu.c
-@@ -1,3 +1,4 @@
+@@ -1,4 +1,5 @@
  #ifdef EXT_OPTIONS_MENU
 +#ifdef DYNOS_INL
  
  #include "sm64.h"
-@@ -631,2 +632,3 @@ void optmenu_check_buttons(void) {
+ #include "text_strings.h"
+@@ -630,3 +631,4 @@ void optmenu_check_buttons(void) {
+ }
  
  #endif // EXT_OPTIONS_MENU
 +#endif
@@ -7672,13 +7699,16 @@ diff --git a/src/game/rendering_graph_node.c b/src/game/rendering_graph_node.c
 index d5bf577..7a7b43b 100644
 --- a/src/game/rendering_graph_node.c
 +++ b/src/game/rendering_graph_node.c
-@@ -2,4 +2,5 @@
+@@ -1,6 +1,7 @@
+ #include <PR/ultratypes.h>
  
  #include "area.h"
 +#include "data/dynos.c.h"
  #include "engine/math_util.h"
  #include "game_init.h"
-@@ -821,5 +822,7 @@ static void geo_process_object(struct Object *node) {
+ #include "gfx_dimensions.h"
+@@ -820,7 +821,9 @@ static void geo_process_object(struct Object *node) {
+ 
          // FIXME: correct types
          if (node->header.gfx.unk38.curAnim != NULL) {
 +            dynos_gfx_swap_animations(node);
@@ -7686,7 +7716,9 @@ index d5bf577..7a7b43b 100644
 +            dynos_gfx_swap_animations(node);
          }
          if (obj_is_in_view(&node->header.gfx, gMatStack[gMatStackIndex])) {
-@@ -908,5 +911,7 @@ void geo_process_held_object(struct GraphNodeHeldObject *node) {
+             Mtx *mtx = alloc_display_list(sizeof(*mtx));
+@@ -907,7 +910,9 @@ void geo_process_held_object(struct GraphNodeHeldObject *node) {
+         gCurAnimType = 0;
          gCurGraphNodeHeldObject = (void *) node;
          if (node->objNode->header.gfx.unk38.curAnim != NULL) {
 +            dynos_gfx_swap_animations(node->objNode);
@@ -7694,23 +7726,29 @@ index d5bf577..7a7b43b 100644
 +            dynos_gfx_swap_animations(node->objNode);
          }
  
-@@ -931,4 +936,5 @@ void geo_process_held_object(struct GraphNodeHeldObject *node) {
+         geo_process_node_and_siblings(node->objNode->header.gfx.sharedChild);
+@@ -930,6 +935,7 @@ void geo_process_held_object(struct GraphNodeHeldObject *node) {
+  * Processes the children of the given GraphNode if it has any
   */
  void geo_try_process_children(struct GraphNode *node) {
 +    if (!dynos_sanity_check_geo(node->type)) return;
      if (node->children != NULL) {
          geo_process_node_and_siblings(node->children);
-@@ -942,4 +948,5 @@ void geo_try_process_children(struct GraphNode *node) {
+     }
+@@ -941,6 +947,7 @@ void geo_try_process_children(struct GraphNode *node) {
+  * be iterated over.
   */
  void geo_process_node_and_siblings(struct GraphNode *firstNode) {
 +    if (!dynos_sanity_check_geo(firstNode->type)) return;
      s16 iterateChildren = TRUE;
      struct GraphNode *curGraphNode = firstNode;
+     struct GraphNode *parent = curGraphNode->parent;
 diff --git a/src/pc/gfx/gfx_pc.c b/src/pc/gfx/gfx_pc.c
-index a78f2ff..b1ccc01 100644
+index 7290f49..5f2f6f5 100644
 --- a/src/pc/gfx/gfx_pc.c
 +++ b/src/pc/gfx/gfx_pc.c
-@@ -7,8 +7,6 @@
+@@ -6,10 +6,8 @@
+ #include <stdbool.h>
  #include <assert.h>
  
 -#ifdef EXTERNAL_DATA
@@ -7719,7 +7757,9 @@ index a78f2ff..b1ccc01 100644
 -#endif
  
  #ifndef _LANGUAGE_C
-@@ -51,11 +49,6 @@
+ #define _LANGUAGE_C
+@@ -50,13 +48,8 @@
+ #define MAX_LIGHTS 2
  #define MAX_VERTICES 64
  
 -#ifdef EXTERNAL_DATA
@@ -7731,10 +7771,25 @@ index a78f2ff..b1ccc01 100644
 -#endif
  
  #define HASHMAP_LEN (MAX_CACHED_TEXTURES * 2)
-@@ -599,4 +592,6 @@ static bool preload_texture(void *user, const char *path) {
+ #define HASH_MASK (HASHMAP_LEN - 1)
+@@ -602,6 +595,8 @@ static bool preload_texture(void *user, const char *path) {
+ #endif // EXTERNAL_DATA
  
  static void import_texture(int tile) {
 +    extern s32 dynos_gfx_import_texture(void **output, void *ptr, s32 tile, void *grapi, void **hashmap, void *pool, s32 *poolpos, s32 poolsize);
 +    if (dynos_gfx_import_texture((void **) &rendering_state.textures[tile], (void *) rdp.loaded_texture[tile].addr, tile, gfx_rapi, (void **) gfx_texture_cache.hashmap, (void *) gfx_texture_cache.pool, (int *) &gfx_texture_cache.pool_pos, MAX_CACHED_TEXTURES)) { return; }
      uint8_t fmt = rdp.texture_tile.fmt;
      uint8_t siz = rdp.texture_tile.siz;
+ 
+diff --git a/src/pc/pc_main.c b/src/pc/pc_main.c
+index aa1f8a5..e4a3f48 100644
+--- a/src/pc/pc_main.c
++++ b/src/pc/pc_main.c
+@@ -310,6 +310,7 @@ void main_func(void) {
+ 
+ int main(int argc, char *argv[]) {
+     parse_cli_opts(argc, argv);
++    DynOS_Init();
+     main_func();
+     return 0;
+ }
