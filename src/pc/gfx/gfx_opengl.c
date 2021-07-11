@@ -19,13 +19,20 @@
 # include <GL/glew.h>
 #endif
 
-#include <SDL2/SDL.h>
-
 #define GL_GLEXT_PROTOTYPES 1
-#ifdef USE_GLES
-# include <SDL2/SDL_opengles2.h>
-#else
-# include <SDL2/SDL_opengl.h>
+
+#ifdef WAPI_SDL2
+# include <SDL2/SDL.h>
+# ifdef USE_GLES
+#  include <SDL2/SDL_opengles2.h>
+# else
+#  include <SDL2/SDL_opengl.h>
+# endif
+#elif defined(WAPI_SDL1)
+# include <SDL/SDL.h>
+# ifndef GLEW_STATIC
+#  include <SDL/SDL_opengl.h>
+# endif
 #endif
 
 #include "../platform.h"
@@ -203,11 +210,7 @@ static struct ShaderProgram *gfx_opengl_create_and_load_new_shader(uint32_t shad
     bool opt_alpha = (shader_id & SHADER_OPT_ALPHA) != 0;
     bool opt_fog = (shader_id & SHADER_OPT_FOG) != 0;
     bool opt_texture_edge = (shader_id & SHADER_OPT_TEXTURE_EDGE) != 0;
-#ifdef USE_GLES
-    bool opt_noise = false;
-#else
     bool opt_noise = (shader_id & SHADER_OPT_NOISE) != 0;
-#endif
 
     bool used_textures[2] = { 0, 0 };
     int num_inputs = 0;
@@ -333,7 +336,11 @@ static struct ShaderProgram *gfx_opengl_create_and_load_new_shader(uint32_t shad
 
         append_line(fs_buf, &fs_len, "float random(in vec3 value) {");
         append_line(fs_buf, &fs_len, "    float random = dot(sin(value), vec3(12.9898, 78.233, 37.719));");
+#ifdef USE_GLES
+        append_line(fs_buf, &fs_len, "    return fract(sin(random) * 143.7585453);");
+#else
         append_line(fs_buf, &fs_len, "    return fract(sin(random) * 143758.5453);");
+#endif
         append_line(fs_buf, &fs_len, "}");
     }
 

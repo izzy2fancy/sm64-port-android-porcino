@@ -83,3 +83,6 @@ sm64config.txt
 
 # SDL
 SDL/include
+
+# libc++ from Termux
+android/lib/*/libc++_shared.so

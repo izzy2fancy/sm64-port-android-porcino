@@ -1,15 +1,49 @@
+#include "platform_info.h"
+
 unsigned char gSoundDataADSR[] = {
-#include "sound/sound_data.ctl.inc.c"
+#if IS_BIG_ENDIAN && IS_64_BIT
+#include "sound/sound_data.ctl.be.64.inc.c"
+#elif IS_BIG_ENDIAN && !IS_64_BIT
+#include "sound/sound_data.ctl.be.32.inc.c"
+#elif !IS_BIG_ENDIAN && IS_64_BIT
+#include "sound/sound_data.ctl.le.64.inc.c"
+#elif !IS_BIG_ENDIAN && !IS_64_BIT
+#include "sound/sound_data.ctl.le.32.inc.c"
+#endif
 };
 
 unsigned char gSoundDataRaw[] = {
-#include "sound/sound_data.tbl.inc.c"
+#if IS_BIG_ENDIAN && IS_64_BIT
+#include "sound/sound_data.tbl.be.64.inc.c"
+#elif IS_BIG_ENDIAN && !IS_64_BIT
+#include "sound/sound_data.tbl.be.32.inc.c"
+#elif !IS_BIG_ENDIAN && IS_64_BIT
+#include "sound/sound_data.tbl.le.64.inc.c"
+#elif !IS_BIG_ENDIAN && !IS_64_BIT
+#include "sound/sound_data.tbl.le.32.inc.c"
+#endif
 };
 
 unsigned char gMusicData[] = {
-#include "sound/sequences.bin.inc.c"
+#if IS_BIG_ENDIAN && IS_64_BIT
+#include "sound/sequences.bin.be.64.inc.c"
+#elif IS_BIG_ENDIAN && !IS_64_BIT
+#include "sound/sequences.bin.be.32.inc.c"
+#elif !IS_BIG_ENDIAN && IS_64_BIT
+#include "sound/sequences.bin.le.64.inc.c"
+#elif !IS_BIG_ENDIAN && !IS_64_BIT
+#include "sound/sequences.bin.le.32.inc.c"
+#endif
 };
 
 unsigned char gBankSetsData[] = {
-#include "sound/bank_sets.inc.c"
+#if IS_BIG_ENDIAN && IS_64_BIT
+#include "sound/bank_sets.be.64.inc.c"
+#elif IS_BIG_ENDIAN && !IS_64_BIT
+#include "sound/bank_sets.be.32.inc.c"
+#elif !IS_BIG_ENDIAN && IS_64_BIT
+#include "sound/bank_sets.le.64.inc.c"
+#elif !IS_BIG_ENDIAN && !IS_64_BIT
+#include "sound/bank_sets.le.32.inc.c"
+#endif
 };

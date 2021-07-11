@@ -173,18 +173,44 @@ static void on_anim_frame(double time) {
 #endif
 
 #ifdef __ANDROID__
+#include "platform.h"
+extern const char* SDL_AndroidGetInternalStoragePath();
 extern const char* SDL_AndroidGetExternalStoragePath();
+
+void move_to_new_dir(char* file) {
+    const char *basedir = SDL_AndroidGetExternalStoragePath();
+    char original_loc[SYS_MAX_PATH];
+    char new_loc[SYS_MAX_PATH];
+    snprintf(original_loc, sizeof(original_loc), "%s/%s", basedir, file);
+    snprintf(new_loc, sizeof(new_loc), "%s/%s/%s", basedir, gCLIOpts.GameDir[0] ? gCLIOpts.GameDir : FS_BASEDIR, file);
+    rename(original_loc, new_loc);
+}
+
+void move_to_new_dir_user(char* file) {
+    const char *olddir = SDL_AndroidGetInternalStoragePath();
+    const char *basedir = SDL_AndroidGetExternalStoragePath();
+    char original_loc[SYS_MAX_PATH];
+    char new_loc[SYS_MAX_PATH];
+    snprintf(original_loc, sizeof(original_loc), "%s/%s", basedir, file);
+    snprintf(new_loc, sizeof(new_loc), "%s/%s/%s", basedir, gCLIOpts.GameDir[0] ? gCLIOpts.GameDir : FS_BASEDIR, file);
+    rename(original_loc, new_loc);
+}
 #endif
 
 void main_func(void) {
-    static u64 pool[0x165000/8 / 4 * sizeof(void *)];
-    main_pool_init(pool, pool + sizeof(pool) / sizeof(pool[0]));
-    gEffectsMemoryPool = mem_pool_init(0x4000, MEMORY_POOL_LEFT);
-
-#ifndef __ANDROID__
-    const char *gamedir = gCLIOpts.GameDir[0] ? gCLIOpts.GameDir : FS_BASEDIR;
+#ifdef __ANDROID__
+    //Move old stuff to new path
+    const char *basedir = SDL_AndroidGetExternalStoragePath();
+    char gamedir[SYS_MAX_PATH];
+    snprintf(gamedir, sizeof(gamedir), "%s/%s", basedir, gCLIOpts.GameDir[0] ? gCLIOpts.GameDir : FS_BASEDIR);
+    if (stat(gamedir, NULL) == -1) {
+        mkdir(gamedir, 0770);
+    }
+    move_to_new_dir("sound");
+    move_to_new_dir("gfx");
+    move_to_new_dir("base.zip");
 #else
-    const char *gamedir = SDL_AndroidGetExternalStoragePath();
+    const char *gamedir = gCLIOpts.GameDir[0] ? gCLIOpts.GameDir : FS_BASEDIR;
 #endif
     const char *userpath = gCLIOpts.SavePath[0] ? gCLIOpts.SavePath : sys_user_path();
     fs_init(sys_ropaths, gamedir, userpath);
@@ -195,6 +221,12 @@ void main_func(void) {
         configWindow.fullscreen = true;
     else if (gCLIOpts.FullScreen == 2)
         configWindow.fullscreen = false;
+
+    const size_t poolsize = gCLIOpts.PoolSize ? gCLIOpts.PoolSize : DEFAULT_POOL_SIZE;
+    u64 *pool = malloc(poolsize);
+    if (!pool) sys_fatal("Could not alloc %u bytes for main pool.\n", poolsize);
+    main_pool_init(pool, pool + poolsize / sizeof(pool[0]));
+    gEffectsMemoryPool = mem_pool_init(0x4000, MEMORY_POOL_LEFT);
 
     #if defined(WAPI_SDL1) || defined(WAPI_SDL2)
     wm_api = &gfx_sdl;
@@ -234,8 +266,10 @@ void main_func(void) {
     wm_api->set_touchscreen_callbacks((void *)touch_down, (void *)touch_motion, (void *)touch_up);
 #endif
 
+    #if defined(AAPI_SDL1) || defined(AAPI_SDL2)
     if (audio_api == NULL && audio_sdl.init()) 
         audio_api = &audio_sdl;
+    #endif
 
     if (audio_api == NULL) {
         audio_api = &audio_null;
