@@ -160,6 +160,22 @@ ALIGNED8 static const u8 texture_zeta[] = {
 #include "textures/segment2/segment2.04600.rgba16.inc.c"
 };
 
+ALIGNED8 static const u8 texture_up[] = {
+#include "textures/touchcontrols/segment2.08150.rgba16.inc.c"
+};
+
+ALIGNED8 static const u8 texture_down[] = {
+#include "textures/touchcontrols/segment2.081D0.rgba16.inc.c"
+};
+
+ALIGNED8 static const u8 texture_left[] = {
+#include "textures/touchcontrols/segment2.08B50.rgba16.inc.c"
+};
+
+ALIGNED8 static const u8 texture_right[] = {
+#include "textures/touchcontrols/segment2.08BD0.rgba16.inc.c"
+};
+
 //Sprite drawing code stolen from src/game/print.c
 
 static void select_button_texture(int dark) {
@@ -217,15 +233,35 @@ void render_touch_controls(void) {
                     select_button_texture(1);
                 pos = ControlElements[i].GetPos();
                 DrawSprite(pos.x - 8, pos.y, 2);
-				if (ControlElements[i].character == 'z')
-				{
+				if (ControlElements[i].character == 'z') {
 					gDPPipeSync(gDisplayListHead++);
 					gDPSetTextureImage(gDisplayListHead++, G_IM_FMT_RGBA, G_IM_SIZ_16b, 1, texture_zeta);
 					gSPDisplayList(gDisplayListHead++, dl_hud_img_load_tex_block);
+					DrawSprite(pos.x, pos.y, 1);
+				} else if (ControlElements[i].character == 'u') {
+					gDPPipeSync(gDisplayListHead++);
+					gDPSetTextureImage(gDisplayListHead++, G_IM_FMT_RGBA, G_IM_SIZ_16b, 1, texture_up);
+					gSPDisplayList(gDisplayListHead++, dl_hud_img_load_tex_block);
+					DrawSprite(pos.x - 5, pos.y - 10, 1);
+				} else if (ControlElements[i].character == 'd') {
+					gDPPipeSync(gDisplayListHead++);
+					gDPSetTextureImage(gDisplayListHead++, G_IM_FMT_RGBA, G_IM_SIZ_16b, 1, texture_down);
+					gSPDisplayList(gDisplayListHead++, dl_hud_img_load_tex_block);
+					DrawSprite(pos.x - 5, pos.y + 15, 1);
+				} else if (ControlElements[i].character == 'l') {
+					gDPPipeSync(gDisplayListHead++);
+					gDPSetTextureImage(gDisplayListHead++, G_IM_FMT_RGBA, G_IM_SIZ_16b, 1, texture_left);
+					gSPDisplayList(gDisplayListHead++, dl_hud_img_load_tex_block);
+					DrawSprite(pos.x - 18, pos.y + 2, 1);
+				} else if (ControlElements[i].character == 'e') {
+					gDPPipeSync(gDisplayListHead++);
+					gDPSetTextureImage(gDisplayListHead++, G_IM_FMT_RGBA, G_IM_SIZ_16b, 1, texture_right);
+					gSPDisplayList(gDisplayListHead++, dl_hud_img_load_tex_block);
+					DrawSprite(pos.x + 8, pos.y + 2, 1);
 				} else {
 					select_char_texture(ControlElements[i].character);
+					DrawSprite(pos.x, pos.y, 1);
 				}
-                DrawSprite(pos.x, pos.y, 1);
                 break;
         }
     }
