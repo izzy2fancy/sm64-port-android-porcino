@@ -23,6 +23,10 @@
 
 #include "config.h"
 #include "gfx_dimensions.h"
+#ifdef BETTERCAMERA
+#include "pc/controller/controller_keyboard.h"
+extern bool mouseCursor;
+#endif
 
 #define MAX_GD_DLS 1000
 #define OS_MESG_SI_COMPLETE 0x33333333
@@ -1158,6 +1162,7 @@ void gd_add_to_heap(void *addr, u32 size) {
 
 /* 24AAE0 -> 24AB7C */
 void gdm_init(void *blockpool, u32 size) {
+    mouseCursor = TRUE;
     UNUSED u32 pad;
 
     add_to_stacktrace("gdm_init");

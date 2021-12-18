@@ -16,6 +16,8 @@
 #include "thread6.h"
 #ifdef BETTERCAMERA
 #include "bettercamera.h"
+#include "pc/controller/controller_mouse.h"
+extern u8 newcam_mouse;
 #endif
 
 void play_flip_sounds(struct MarioState *m, s16 frame1, s16 frame2, s16 frame3) {
@@ -272,7 +274,12 @@ void update_lava_boost_or_twirling(struct MarioState *m) {
 }
 
 void update_flying_yaw(struct MarioState *m) {
-    s16 targetYawVel = -(s16)(m->controller->stickX * (m->forwardVel / 4.0f));
+    s16 targetYawVel = 0;
+    s16 stick_mouse_x = 0;
+#ifdef BETTERCAMERA
+    if (newcam_mouse) stick_mouse_x = (s16)(mouse_x) > 64 ? 64 : (s16)(mouse_x) < -64 ? -64 : (s16)(mouse_x);
+#endif
+    targetYawVel -= (s16)((abs(stick_mouse_x) > abs((int)m->controller->stickX) ? stick_mouse_x : m->controller->stickX) * (m->forwardVel / 4.0f));
 
     if (targetYawVel > 0) {
         if (m->angleVel[1] < 0) {
@@ -301,7 +308,12 @@ void update_flying_yaw(struct MarioState *m) {
 }
 
 void update_flying_pitch(struct MarioState *m) {
-    s16 targetPitchVel = -(s16)(m->controller->stickY * (m->forwardVel / 5.0f));
+    s16 targetPitchVel = 0;
+    s16 stick_mouse_y = 0;
+#ifdef BETTERCAMERA
+    if (newcam_mouse) stick_mouse_y = (s16)(mouse_y) > 64 ? 64 : (s16)(mouse_y) < -64 ? -64 : (s16)(mouse_y);
+#endif
+    targetPitchVel -= (s16)((abs(stick_mouse_y) > abs((int)m->controller->stickY) ? -stick_mouse_y : m->controller->stickY) * (m->forwardVel / 5.0f));
 
     if (targetPitchVel > 0) {
         if (m->angleVel[0] < 0) {

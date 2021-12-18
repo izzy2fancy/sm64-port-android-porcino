@@ -23,6 +23,10 @@
 #include "save_file.h"
 #include "skybox.h"
 #include "sound_init.h"
+#ifdef BETTERCAMERA
+#include "bettercamera.h"
+extern u8 newcam_xlu;
+#endif
 
 #define TOAD_STAR_1_REQUIREMENT 12
 #define TOAD_STAR_2_REQUIREMENT 25
@@ -311,7 +315,15 @@ static Gfx *make_gfx_mario_alpha(struct GraphNodeGenerated *node, s16 alpha) {
         node->fnNode.node.flags = (node->fnNode.node.flags & 0xFF) | (LAYER_TRANSPARENT << 8);
         gfxHead = alloc_display_list(3 * sizeof(*gfxHead));
         gfx = gfxHead;
+#ifdef BETTERCAMERA
+        if (gMarioState->flags & MARIO_VANISH_CAP || gMarioState->flags & MARIO_TELEPORTING) {
+            gDPSetAlphaCompare(gfx++, G_AC_DITHER);
+        } else {
+            gDPSetAlphaCompare(gfx++, G_AC_COVERAGE);
+        }
+#else
         gDPSetAlphaCompare(gfx++, G_AC_DITHER);
+#endif
     }
     gDPSetEnvColor(gfx++, 255, 255, 255, alpha);
     gSPEndDisplayList(gfx);
@@ -331,6 +343,12 @@ Gfx *geo_mirror_mario_set_alpha(s32 callContext, struct GraphNode *node, UNUSED 
 
     if (callContext == GEO_CONTEXT_RENDER) {
         alpha = (bodyState->modelState & 0x100) ? (bodyState->modelState & 0xFF) : 255;
+#ifdef BETTERCAMERA
+        if (alpha > newcam_xlu) {
+            alpha = newcam_xlu;
+            bodyState->modelState |= MODEL_STATE_NOISE_ALPHA;
+        }
+#endif
         gfx = make_gfx_mario_alpha(asGenerated, alpha);
     }
     return gfx;

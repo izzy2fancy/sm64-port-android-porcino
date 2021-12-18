@@ -18,8 +18,8 @@
 #endif
 
 #define NEW_CAM_BOUNDING_BOX_RAYS 4
-#define NEW_CAM_BOUNDING_BOX_HRADIUS 250
-#define NEW_CAM_BOUNDING_BOX_VRADIUS 100
+#define NEW_CAM_BOUNDING_BOX_HRADIUS 25
+#define NEW_CAM_BOUNDING_BOX_VRADIUS 10
 
 /**
 Quick explanation of the camera modes
@@ -109,9 +109,10 @@ s16 newcam_panlevel; //How much the camera sticks out a bit in the direction you
 s16 newcam_aggression ; //How much the camera tries to centre itself to Mario's facing and movement.
 s16 newcam_degrade = 1;
 s16 newcam_analogue = 0; //Wether to accept inputs from a player 2 joystick, and then disables C button input.
-s16 newcam_distance_values[] = {750,1250,2000};
+s16 newcam_distance_values[] = {750,1250,1750};
 u8 newcam_active = 0; // basically the thing that governs if newcam is on.
 u8 newcam_mouse = 0;
+u8 newcam_mouse_to_stick = 0;
 u16 newcam_mode;
 u16 newcam_intendedmode = 0; // which camera mode the camera's going to try to be in when not forced into another.
 u16 newcam_modeflags;
@@ -127,15 +128,17 @@ void newcam_init(struct Camera *c, u8 dv) {
     newcam_mode = NC_MODE_NORMAL;
     ///This here will dictate what modes the camera will start in at the beginning of a level. Below are some examples.
     switch (gCurrLevelNum) {
-        case LEVEL_BITDW: newcam_yaw = 0x4000; newcam_mode = NC_MODE_8D; newcam_tilt = 4000; newcam_distance_target = newcam_distance_values[2]; break;
-        case LEVEL_BITFS: newcam_yaw = 0x4000; newcam_mode = NC_MODE_8D; newcam_tilt = 4000; newcam_distance_target = newcam_distance_values[2]; break;
-        case LEVEL_BITS: newcam_yaw = 0x4000; newcam_mode = NC_MODE_8D; newcam_tilt = 4000; newcam_distance_target = newcam_distance_values[2]; break;
+        case LEVEL_BITDW: newcam_yaw = 0x4000; newcam_tilt = 4000; newcam_distance_target = newcam_distance_values[1]; break;
+        case LEVEL_BITFS: newcam_yaw = 0x4000; newcam_tilt = 4000; newcam_distance_target = newcam_distance_values[1]; break;
+        case LEVEL_BITS: newcam_yaw = 0x4000; newcam_tilt = 4000; newcam_distance_target = newcam_distance_values[1]; break;
         case LEVEL_WF: newcam_yaw = 0x4000; newcam_tilt = 2000; newcam_distance_target = newcam_distance_values[1]; break;
-        case LEVEL_RR: newcam_yaw = 0x6000; newcam_tilt = 2000; newcam_distance_target = newcam_distance_values[2]; break;
+        case LEVEL_RR: newcam_yaw = 0x6000; newcam_tilt = 2000; newcam_distance_target = newcam_distance_values[1]; break;
         case LEVEL_CCM: if (gCurrAreaIndex == 1) {newcam_yaw = -0x4000; newcam_tilt = 2000; newcam_distance_target = newcam_distance_values[1];} else newcam_mode = NC_MODE_SLIDE; break;
         case LEVEL_WDW: newcam_yaw = 0x2000; newcam_tilt = 3000; newcam_distance_target = newcam_distance_values[1]; break;
         case 27: newcam_mode = NC_MODE_SLIDE; break;
         case LEVEL_TTM: if (gCurrAreaIndex == 2) newcam_mode = NC_MODE_SLIDE; break;
+        case LEVEL_CASTLE_GROUNDS: newcam_yaw = 0x4000; break;
+        case LEVEL_CASTLE: if (gCurrAreaIndex == 1 && c->pos[2] > -3500) {newcam_yaw = 0x4000;} break;
     }
 
     // clear these out when entering a new level to prevent "camera mode buffering"
@@ -316,7 +319,7 @@ static void newcam_rotate_button(void) {
 
     newcam_framessincec[0] ++;
     newcam_framessincec[1] ++;
-    if ((gPlayer1Controller->buttonPressed & L_CBUTTONS) && newcam_modeflags & NC_FLAG_XTURN && !(newcam_modeflags & NC_FLAG_8D) && newcam_analogue == 0) {
+    /*if ((gPlayer1Controller->buttonPressed & L_CBUTTONS) && newcam_modeflags & NC_FLAG_XTURN && !(newcam_modeflags & NC_FLAG_8D) && newcam_analogue == 0) {
         if (newcam_framessincec[0] < 6) {
             newcam_yaw_target = newcam_yaw+(ivrt(0)*0x3000);
             newcam_centering = 1;
@@ -335,7 +338,7 @@ static void newcam_rotate_button(void) {
             #endif
         }
         newcam_framessincec[1] = 0;
-    }
+    }*/
 
 
     //There's not much point in keeping this behind a check, but it wouldn't hurt, just incase any 2player shenanigans ever happen, it makes it easy to disable.
@@ -378,9 +381,9 @@ static void newcam_rotate_button(void) {
             newcam_tilt_acc -= (newcam_tilt_acc*((f32)newcam_degrade/100));
     }
 
-    if (newcam_mouse == 1) {
-        newcam_yaw += ivrt(0) * mouse_x * 16;
-        newcam_tilt += ivrt(1) * mouse_y * 16;
+    if (newcam_mouse == 1 && newcam_mouse_to_stick == 0) {
+        newcam_yaw += ivrt(0) * mouse_x * configCameraXSens;
+        newcam_tilt += ivrt(1) * mouse_y * configCameraYSens;
     }
 }
 
@@ -524,7 +527,7 @@ static void newcam_collision(void) {
     Vec3f hitpos;
 
     camdir[0] = newcam_pos[0]-newcam_lookat[0];
-    camdir[1] = newcam_pos[1]-newcam_lookat[1];
+    camdir[1] = (newcam_pos[1]+260 < newcam_pos_target[1] ? newcam_pos_target[1]-260 : newcam_pos[1])-newcam_lookat[1];
     camdir[2] = newcam_pos[2]-newcam_lookat[2];
 
     find_surface_on_ray(newcam_pos_target, camdir, &surf, hitpos);
@@ -600,6 +603,18 @@ static void newcam_position_cam(void) {
         newcam_bounding_box();
     }
 
+    struct Surface *floor;
+    f32 newcam_floor;
+    newcam_floor = find_floor(newcam_pos[0], newcam_lookat[1], newcam_pos[2], &floor);
+    if ((newcam_pos[1] - newcam_lookat[1]) < (newcam_floor - newcam_lookat[1])) {
+        float delta = ((30000-newcam_floor) - (30000-newcam_lookat[1])) / ((30000-newcam_pos[1]) - (30000-newcam_lookat[1]));
+        newcam_pos[1] = newcam_floor;
+        if (delta > 0 && delta < 1) {
+            newcam_pos[0] = 30000 - (delta * ((30000-newcam_pos[0]) - (30000-newcam_lookat[0])) + (30000-newcam_lookat[0]));
+            newcam_pos[2] = 30000 - (delta * ((30000-newcam_pos[2]) - (30000-newcam_lookat[2])) + (30000-newcam_lookat[2]));
+        }
+        newcam_coldist = sqrtf((newcam_pos_target[0] - newcam_pos[0]) * (newcam_pos_target[0] - newcam_pos[0]) + (newcam_pos_target[1] - newcam_pos[1]) * (newcam_pos_target[1] - newcam_pos[1]) + (newcam_pos_target[2] - newcam_pos[2]) * (newcam_pos_target[2] - newcam_pos[2]));
+    }
 }
 
 //Nested if's baybeeeee
@@ -665,7 +680,9 @@ static void newcam_apply_values(struct Camera *c) {
         if (gMarioState->floor->type == SURFACE_LOOK_UP_WARP) {
             if (save_file_get_total_star_count(gCurrSaveFileNum - 1, 0, 0x18) >= 10) {
                 if (newcam_tilt < -8000 && gMarioState->forwardVel == 0) {
-                    level_trigger_warp(gMarioState, 1);
+                    if ((gMarioState->action & ACT_GROUP_MASK) != ACT_GROUP_CUTSCENE) {
+                        level_trigger_warp(gMarioState, 1);
+                    }
                 }
             }
         }
@@ -674,11 +691,12 @@ static void newcam_apply_values(struct Camera *c) {
 
 //If puppycam gets too close to its target, start fading it out so you don't see the inside of it.
 void newcam_fade_target_closeup(void) {
-    if (newcam_coldist <= 250 && (newcam_coldist-150)*2.55f < 255) {
-        if ((newcam_coldist-150)*2.55f > 0)
-            newcam_xlu = (newcam_coldist-150)*2.55f;
-        else
+    if (newcam_coldist < 150 && (gMarioState->action & ACT_GROUP_MASK) != ACT_GROUP_CUTSCENE) {
+        if (newcam_coldist > 100) {
+            newcam_xlu = (newcam_coldist * (2.55f * 2) - (255 * 2)) / 1.5f;
+        } else {
             newcam_xlu = 0;
+        }
     } else {
         newcam_xlu = 255;
     }
@@ -703,7 +721,7 @@ void newcam_loop(struct Camera *c) {
     newcam_rotate_button();
     newcam_zoom_button();
     newcam_position_cam();
-    newcam_find_fixed();
+    //newcam_find_fixed();
     if (gMarioObject)
         newcam_apply_values(c);
     newcam_fade_target_closeup();

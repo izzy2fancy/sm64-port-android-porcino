@@ -5,6 +5,12 @@
 #include <string.h>
 #include <stdbool.h>
 #include <assert.h>
+#ifdef __MINGW32__
+#define GLEW_STATIC
+#include <GL/glew.h>
+#else
+#include <SDL2/SDL_opengl.h>
+#endif
 
 #ifdef EXTERNAL_DATA
 #define STB_IMAGE_IMPLEMENTATION
@@ -17,6 +23,7 @@
 #include <PR/gbi.h>
 
 #include "config.h"
+#include "gfx_colors.h"
 
 #include "gfx_pc.h"
 #include "gfx_cc.h"
@@ -27,6 +34,8 @@
 #include "../platform.h"
 #include "../configfile.h"
 #include "../fs/fs.h"
+#include "game/area.h"
+#include "game/object_list_processor.h"
 
 #define SUPPORT_CHECK(x) assert(x)
 
@@ -64,6 +73,8 @@
 #ifdef __ANDROID__
 int render_multiplier;
 #endif
+
+extern int frame_skip;
 
 struct RGBA {
     uint8_t r, g, b, a;
@@ -511,6 +522,83 @@ static void import_texture_ci8(int tile) {
 
 #else // EXTERNAL_DATA
 
+static inline bool load_DDS(const char *path) {
+	unsigned char* header;
+	unsigned int width;
+	unsigned int height;
+	unsigned int mipMapCount;
+	unsigned int blockSize;
+	unsigned int format;
+	unsigned int w;
+	unsigned int h;
+	unsigned char* buffer = 0;
+	bool found = false;
+
+	u64 file_size = 0;
+	unsigned char* imgdata = fs_load_file(path, &file_size);
+
+	header = malloc(128);
+	if (!imgdata) return found;
+	memcpy(header, imgdata, 128);
+
+	if(memcmp(header, "DDS ", 4) != 0)
+		goto exit;
+	
+	height = (header[12]) | (header[13] << 8) | (header[14] << 16) | (header[15] << 24);
+	width = (header[16]) | (header[17] << 8) | (header[18] << 16) | (header[19] << 24);
+	mipMapCount = (header[28]) | (header[29] << 8) | (header[30] << 16) | (header[31] << 24);
+	
+	if(header[84] == 'D') {
+		switch(header[87]) {
+			case '1': // DXT1
+				format = GL_COMPRESSED_RGBA_S3TC_DXT1_EXT;
+				blockSize = 8;
+				break;
+			case '3': // DXT3
+				format = GL_COMPRESSED_RGBA_S3TC_DXT3_EXT;
+				blockSize = 16;
+				break;
+			case '5': // DXT5
+				format = GL_COMPRESSED_RGBA_S3TC_DXT5_EXT;
+				blockSize = 16;
+				break;
+			case '0': // DX10
+			default: goto exit;
+		}
+	} else
+		goto exit;
+
+	buffer = malloc(file_size);
+	if(buffer == 0)
+		goto exit;
+	memcpy(buffer, &imgdata[128], file_size);
+
+	unsigned int offset = 0;
+	unsigned int size = 0;
+	w = width;
+	h = height;
+
+	for (unsigned int i=0; i<mipMapCount; i++) {
+		if(w == 0 || h == 0) {
+			mipMapCount--;
+			continue;
+		}
+		size = ((w+3)/4) * ((h+3)/4) * blockSize;
+		glCompressedTexImage2D(GL_TEXTURE_2D, i, format, w, h, 0, size, buffer + offset);
+		offset += size;
+		w /= 2;
+		h /= 2;
+	}
+	found = true;
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAX_LEVEL, configFiltering == 0 ? 0 : mipMapCount-1);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, configFiltering == 0 ? GL_NEAREST_MIPMAP_NEAREST : GL_LINEAR_MIPMAP_LINEAR);
+exit:
+	free(buffer);
+	free(header);
+	free(imgdata);
+	return found;
+}
+
 static inline void load_texture(const char *fullpath) {
     int w, h;
     u64 imgsize = 0;
@@ -619,8 +707,13 @@ static void import_texture(int tile) {
     // the "texture data" is actually a C string with the path to our texture in it
     // load it from an external image in our data path
     char texname[SYS_MAX_PATH];
-    snprintf(texname, sizeof(texname), FS_TEXTUREDIR "/%s.png", (const char*)rdp.loaded_texture[tile].addr);
-    load_texture(texname);
+    snprintf(texname, sizeof(texname), FS_TEXTUREDIR "/%s.dds", (const char*)rdp.loaded_texture[tile].addr);
+    bool found_dds = load_DDS(texname);
+    if (!found_dds) {
+        snprintf(texname, sizeof(texname), FS_TEXTUREDIR "/%s.png", (const char*)rdp.loaded_texture[tile].addr);
+        load_texture(texname);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    }
 #else
     // the texture data is actual texture data
     int t0 = get_time();
@@ -756,6 +849,7 @@ static float gfx_adjust_x_for_aspect_ratio(float x) {
 }
 
 static void gfx_sp_vertex(size_t n_vertices, size_t dest_index, const Vtx *vertices) {
+    float *colorfx = color_fx();
     for (size_t i = 0; i < n_vertices; i++, dest_index++) {
         const Vtx_t *v = &vertices[i].v;
         const Vtx_tn *vn = &vertices[i].n;
@@ -800,6 +894,9 @@ static void gfx_sp_vertex(size_t n_vertices, size_t dest_index, const Vtx *verti
                 }
             }
             
+            r *= colorfx[0];
+            g *= colorfx[1];
+            b *= colorfx[2];
             d->color.r = r > 255 ? 255 : r;
             d->color.g = g > 255 ? 255 : g;
             d->color.b = b > 255 ? 255 : b;
@@ -817,9 +914,9 @@ static void gfx_sp_vertex(size_t n_vertices, size_t dest_index, const Vtx *verti
                 V = (int32_t)((doty / 127.0f + 1.0f) / 4.0f * rsp.texture_scaling_factor.t);
             }
         } else {
-            d->color.r = v->cn[0];
-            d->color.g = v->cn[1];
-            d->color.b = v->cn[2];
+            d->color.r = v->cn[0] * colorfx[3];
+            d->color.g = v->cn[1] * colorfx[4];
+            d->color.b = v->cn[2] * colorfx[5];
         }
         
         d->u = U;
@@ -867,6 +964,17 @@ static void gfx_sp_tri1(uint8_t vtx1_idx, uint8_t vtx2_idx, uint8_t vtx3_idx) {
     struct LoadedVertex *v_arr[3] = {v1, v2, v3};
     
     //if (rand()%2) return;
+    float alphadis = 1.f;
+    if (gNumStaticSurfaces > 10) {
+        double distance1 = sqrt(((v1->x - 0) * (v1->x - 0)) + ((v1->y - 0) * (v1->y - 0)) + ((v1->z - 0) * (v1->z - 0))) / 85;
+        double distance2 = sqrt(((v2->x - 0) * (v2->x - 0)) + ((v2->y - 0) * (v2->y - 0)) + ((v2->z - 0) * (v2->z - 0))) / 85;
+        double distance3 = sqrt(((v3->x - 0) * (v3->x - 0)) + ((v3->y - 0) * (v3->y - 0)) + ((v3->z - 0) * (v3->z - 0))) / 85;
+        double closestdis = distance1 < distance2 ? distance1 : distance2;
+        closestdis = closestdis < distance3 ? closestdis : distance3;
+        if (gCurrLevelNum > 1 && closestdis > configDrawDistance) return;
+        float alphastart = configDrawDistance / 1.14;
+        alphadis = closestdis > alphastart ? 1.f - (closestdis - alphastart) / (configDrawDistance - alphastart) : 1.f;
+    }
     
     if (v1->clip_rej & v2->clip_rej & v3->clip_rej) {
         // The whole triangle lies outside the visible area
@@ -936,10 +1044,20 @@ static void gfx_sp_tri1(uint8_t vtx1_idx, uint8_t vtx2_idx, uint8_t vtx3_idx) {
     
     uint32_t cc_id = rdp.combine_mode;
     
-    bool use_alpha = (rdp.other_mode_l & (G_BL_A_MEM << 18)) == 0;
+    //bool use_alpha = (rdp.other_mode_l & (G_BL_A_MEM << 18)) == 0;
+    bool use_alpha = alphadis == 1.f ? (rdp.other_mode_l & (G_BL_A_MEM << 18)) == 0 : 1;
     bool use_fog = (rdp.other_mode_l >> 30) == G_BL_CLR_FOG;
     bool texture_edge = (rdp.other_mode_l & CVG_X_ALPHA) == CVG_X_ALPHA;
     bool use_noise = (rdp.other_mode_l & G_AC_DITHER) == G_AC_DITHER;
+    bool use_coverage = (rdp.other_mode_l & G_AC_COVERAGE) == G_AC_COVERAGE;
+    
+    glDisable(GL_SAMPLE_ALPHA_TO_COVERAGE);
+    glDisable(GL_SAMPLE_ALPHA_TO_ONE);
+    if (use_coverage) {
+        glDepthMask(GL_TRUE);
+        glEnable(GL_SAMPLE_ALPHA_TO_COVERAGE);
+        glEnable(GL_SAMPLE_ALPHA_TO_ONE);
+    }
     
     if (texture_edge) {
         use_alpha = true;
@@ -1018,9 +1136,10 @@ static void gfx_sp_tri1(uint8_t vtx1_idx, uint8_t vtx2_idx, uint8_t vtx3_idx) {
         }
         
         if (use_fog) {
-            buf_vbo[buf_vbo_len++] = rdp.fog_color.r / 255.0f;
-            buf_vbo[buf_vbo_len++] = rdp.fog_color.g / 255.0f;
-            buf_vbo[buf_vbo_len++] = rdp.fog_color.b / 255.0f;
+            float *colorfx = color_fx();
+            buf_vbo[buf_vbo_len++] = rdp.fog_color.r / 255.0f * colorfx[0];
+            buf_vbo[buf_vbo_len++] = rdp.fog_color.g / 255.0f * colorfx[1];
+            buf_vbo[buf_vbo_len++] = rdp.fog_color.b / 255.0f * colorfx[2];
             buf_vbo[buf_vbo_len++] = v_arr[i]->color.a / 255.0f; // fog factor (not alpha)
         }
         
@@ -1059,9 +1178,9 @@ static void gfx_sp_tri1(uint8_t vtx1_idx, uint8_t vtx2_idx, uint8_t vtx3_idx) {
                 } else {
                     if (use_fog && color == &v_arr[i]->color) {
                         // Shade alpha is 100% for fog
-                        buf_vbo[buf_vbo_len++] = 1.0f;
+                        buf_vbo[buf_vbo_len++] = 1.0f * alphadis;
                     } else {
-                        buf_vbo[buf_vbo_len++] = color->a / 255.0f;
+                        buf_vbo[buf_vbo_len++] = color->a / 255.0f * alphadis;
                     }
                 }
             }
@@ -1789,7 +1908,8 @@ void gfx_run(Gfx *commands) {
     
     //puts("New frame");
     
-    if (!gfx_wapi->start_frame()) {
+    if (!gfx_wapi->start_frame() || frame_skip == 2) {
+        frame_skip = 1;
         dropped_frame = true;
         return;
     }

@@ -65,6 +65,7 @@ static bool use_timer = true;
 static double frame_time = 0.0; // set in init()
 // GetPerformanceFrequency
 static double perf_freq = 0.0;
+int frame_skip;
 
 const SDL_Scancode windows_scancode_table[] = {
   /*  0                        1                            2                         3                            4                     5                            6                            7  */
@@ -170,7 +171,7 @@ static int test_vsync(void) {
 }
 
 static inline void gfx_sdl_set_vsync(const bool enabled) {
-    if (enabled) {
+    /*if (enabled) {
         // try to detect refresh rate
         SDL_GL_SetSwapInterval(1);
         const int vblanks = gCLIOpts.SyncFrames ? (int)gCLIOpts.SyncFrames : test_vsync();
@@ -182,7 +183,7 @@ static inline void gfx_sdl_set_vsync(const bool enabled) {
         } else {
             printf("could not determine swap interval, falling back to timer sync\n");
         }
-    }
+    }*/
 
     use_timer = true;
     SDL_GL_SetSwapInterval(0);
@@ -241,7 +242,7 @@ static void gfx_sdl_init(const char *window_title) {
     #endif
 
     //SDL_GL_SetAttribute(SDL_GL_MULTISAMPLEBUFFERS, 1);
-    //SDL_GL_SetAttribute(SDL_GL_MULTISAMPLESAMPLES, 4);
+    SDL_GL_SetAttribute(SDL_GL_MULTISAMPLESAMPLES, 1);
 
     int xpos = (configWindow.x == WAPI_WIN_CENTERPOS) ? SDL_WINDOWPOS_CENTERED : configWindow.x;
     int ypos = (configWindow.y == WAPI_WIN_CENTERPOS) ? SDL_WINDOWPOS_CENTERED : configWindow.y;
@@ -344,6 +345,7 @@ static void gfx_sdl_fingerup(SDL_TouchFingerEvent sdl_event) {
 
 static void gfx_sdl_handle_events(void) {
     SDL_Event event;
+    SDL_GL_SetAttribute(SDL_GL_MULTISAMPLESAMPLES, 1);
     while (SDL_PollEvent(&event)) {
         switch (event.type) {
 #ifndef TARGET_WEB
@@ -421,22 +423,24 @@ static bool gfx_sdl_start_frame(void) {
 
 static inline void sync_framerate_with_timer(void) {
     static double last_time;
-    static double last_sec;
-    static int frames_since_last_sec;
     const double now = SDL_GetPerformanceCounter();
-    frames_since_last_sec += 1;
+    double half_time = frame_time / 11;
+    double frame_time_wskip = frame_time;
+    if (frame_skip == 1) {
+        frame_time_wskip *= 2;
+        frame_skip = 0;
+    }
     if (last_time) {
-        const double elapsed = last_sec ? (now - last_sec) : (now - last_time);
-        if ((elapsed < frame_time && !last_sec) || (elapsed < frames_since_last_sec * frame_time && last_sec)) {
-            const double delay = last_sec ? frames_since_last_sec * frame_time - elapsed : frame_time - elapsed;
-            sys_sleep(delay / perf_freq * 1000000.0);
-            last_time = now + delay;
+        const double elapsed = now - last_time;
+        if (elapsed < frame_time_wskip) {
+            const double delay = frame_time - elapsed;
+            const double delay_wskip = frame_time_wskip - elapsed;
+            sys_sleep(delay_wskip / perf_freq * 1000000.0);
+            last_time = now + delay_wskip;
+            if (configFrameskip && delay < half_time && frame_skip == 0) frame_skip = 2;
         } else {
+            if (configFrameskip && frame_skip == 0) frame_skip = 2;
             last_time = now;
-        }
-        if ((int64_t)(now / perf_freq) > (int64_t)(last_sec / perf_freq)) {
-            last_sec = last_time;
-            frames_since_last_sec = 0;
         }
     } else {
         last_time = now;

@@ -853,7 +853,7 @@ void find_surface_on_ray_list(struct SurfaceNode *list, Vec3f orig, Vec3f dir, f
             continue;
 
         // Reject no-cam collision surfaces
-        if (gCheckingSurfaceCollisionsForCamera && (list->surface->flags & SURFACE_FLAG_NO_CAM_COLLISION))
+        if (gCheckingSurfaceCollisionsForCamera && ((list->surface->flags & SURFACE_FLAG_NO_CAM_COLLISION) || ((list->surface->type & SURFACE_VANISH_CAP_WALLS) && (gCurrLevelNum != LEVEL_CASTLE))))
             continue;
 
         // Check intersection between the ray and this surface
@@ -925,7 +925,8 @@ void find_surface_on_ray(Vec3f orig, Vec3f dir, struct Surface **hit_surface, Ve
 	}
 
     // increase collision checking precision (normally 1)
-    f32 precision = gCheckingSurfaceCollisionsForCamera ? 3 : 1;
+    //f32 precision = gCheckingSurfaceCollisionsForCamera ? 3 : 1;
+    f32 precision = 1;
 
     // Get cells we cross using DDA
     if (absx(dir[0]) >= absx(dir[2]))

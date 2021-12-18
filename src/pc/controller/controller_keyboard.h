@@ -16,6 +16,17 @@ void keyboard_on_all_keys_up(void);
 }
 #endif
 
+extern int pressed_esc;
+extern int pressed_r;
+extern int pressed_enter;
+extern bool pressed_left;
+extern bool pressed_down;
+extern bool pressed_right;
+extern bool pressed_up;
+extern bool pressed_del;
+#ifdef BETTERCAMERA
+extern bool mouseCursor;
+#endif
 extern struct ControllerAPI controller_keyboard;
 
 #endif

@@ -16,6 +16,10 @@
 #include "behavior_data.h"
 #include "level_table.h"
 #include "thread6.h"
+#ifdef BETTERCAMERA
+#include "pc/controller/controller_mouse.h"
+extern u8 newcam_mouse;
+#endif
 
 #define MIN_SWIM_STRENGTH 160
 #define MIN_SWIM_SPEED 16.0f
@@ -27,6 +31,8 @@ static s16 sWaterCurrentSpeeds[] = { 28, 12, 8, 4 };
 static s16 D_80339FD0;
 static s16 D_80339FD2;
 static f32 D_80339FD4;
+
+extern s16 lastPitch;
 
 static void set_swimming_at_surface_particles(struct MarioState *m, u32 particleFlag) {
     s16 atSurface = m->pos[1] >= m->waterLevel - 130;
@@ -253,7 +259,17 @@ static void update_swimming_speed(struct MarioState *m, f32 decelThreshold) {
 }
 
 static void update_swimming_yaw(struct MarioState *m) {
-    s16 targetYawVel = -(s16)(10.0f * m->controller->stickX);
+    s16 targetYawVel = 0;
+#ifdef BETTERCAMERA
+    if (newcam_mouse) {
+        s16 stick_mouse_x = (s16)(mouse_x) > 64 ? 64 : (s16)(mouse_x) < -64 ? -64 : (s16)(mouse_x);
+        targetYawVel -= abs(stick_mouse_x) > abs((s16)(m->controller->stickX)) ? stick_mouse_x * 10.0f : (s16)(10.0f * m->controller->stickX);
+    } else {
+#endif
+        targetYawVel -= (s16)(10.0f * m->controller->stickX);
+#ifdef BETTERCAMERA
+    }
+#endif
 
     if (targetYawVel > 0) {
         if (m->angleVel[1] < 0) {
@@ -282,24 +298,35 @@ static void update_swimming_yaw(struct MarioState *m) {
 }
 
 static void update_swimming_pitch(struct MarioState *m) {
-    s16 targetPitch = -(s16)(252.0f * m->controller->stickY);
-
-    s16 pitchVel;
-    if (m->faceAngle[0] < 0) {
-        pitchVel = 0x100;
+    s16 targetPitch = 0;
+    s16 stick_mouse_y = 0;
+#ifdef BETTERCAMERA
+    if (newcam_mouse) stick_mouse_y = (s16)(mouse_y) > 64 ? 64 : (s16)(mouse_y) < -64 ? -64 : (s16)(mouse_y);
+#endif
+    if (m->pos[1] < m->waterLevel - 80) {
+        targetPitch += lastPitch - (s16)(5.0f * (abs(stick_mouse_y) > abs((int)m->controller->stickY) ? -stick_mouse_y : m->controller->stickY));
+        m->faceAngle[0] = targetPitch > 16384 ? 16384 : targetPitch < -16384 ? -16384 : targetPitch;
     } else {
-        pitchVel = 0x200;
-    }
+        targetPitch -= (s16)((abs(stick_mouse_y) > abs((int)(m->controller->stickY)) ? stick_mouse_y * 5.0f : m->controller->stickY) * 252.0f);
 
-    if (m->faceAngle[0] < targetPitch) {
-        if ((m->faceAngle[0] += pitchVel) > targetPitch) {
-            m->faceAngle[0] = targetPitch;
+        s16 pitchVel;
+        if (m->faceAngle[0] < 0) {
+            pitchVel = 0x100;
+        } else {
+            pitchVel = 0x200;
         }
-    } else if (m->faceAngle[0] > targetPitch) {
-        if ((m->faceAngle[0] -= pitchVel) < targetPitch) {
-            m->faceAngle[0] = targetPitch;
+
+        if (m->faceAngle[0] < targetPitch) {
+            if ((m->faceAngle[0] += pitchVel) > targetPitch) {
+                m->faceAngle[0] = targetPitch;
+            }
+        } else if (m->faceAngle[0] > targetPitch) {
+            if ((m->faceAngle[0] -= pitchVel) < targetPitch) {
+                m->faceAngle[0] = targetPitch;
+            }
         }
     }
+    lastPitch = m->faceAngle[0];
 }
 
 static void common_idle_step(struct MarioState *m, s32 animation, s32 arg) {
@@ -471,6 +498,7 @@ static void common_swimming_step(struct MarioState *m, s16 swimStrength) {
             }
             break;
     }
+    lastPitch = m->faceAngle[0];
 
     update_water_pitch(m);
     m->marioBodyState->headAngle[0] = approach_s32(m->marioBodyState->headAngle[0], 0, 0x200, 0x200);

@@ -6,5 +6,6 @@
 #include "types.h"
 
 s32 mario_execute_submerged_action(struct MarioState *m);
+s16 lastPitch;
 
 #endif // MARIO_ACTIONS_SUBMERGED_H

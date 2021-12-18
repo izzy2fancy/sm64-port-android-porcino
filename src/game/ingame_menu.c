@@ -24,6 +24,7 @@
 #include "types.h"
 #include "macros.h"
 #include "pc/cheats.h"
+#include "pc/controller/controller_keyboard.h"
 #ifdef BETTERCAMERA
 #include "bettercamera.h"
 #endif
@@ -1851,6 +1852,14 @@ void set_menu_mode(s16 mode) {
     }
 }
 
+void unpause_game() {
+    optmenu_toggle();
+    level_set_transition(0, 0);
+    play_sound(SOUND_MENU_PAUSE_2, gDefaultSoundArgs);
+    gDialogBoxState = DIALOG_STATE_OPENING;
+    gMenuMode = -1;
+}
+
 void reset_cutscene_msg_fade(void) {
     gCutsceneMsgFade = 0;
 }
@@ -2644,7 +2653,7 @@ s16 render_pause_courses_and_castle(void) {
             if (gPlayer3Controller->buttonPressed & (A_BUTTON | Z_TRIG | START_BUTTON))
 #else
             if (gPlayer3Controller->buttonPressed & A_BUTTON
-             || gPlayer3Controller->buttonPressed & START_BUTTON)
+             || gPlayer3Controller->buttonPressed & START_BUTTON || pressed_esc == 1)
 #endif
             {
                 level_set_transition(0, 0);
@@ -2671,7 +2680,7 @@ s16 render_pause_courses_and_castle(void) {
             if (gPlayer3Controller->buttonPressed & (A_BUTTON | Z_TRIG | START_BUTTON))
 #else
             if (gPlayer3Controller->buttonPressed & A_BUTTON
-             || gPlayer3Controller->buttonPressed & START_BUTTON)
+             || gPlayer3Controller->buttonPressed & START_BUTTON || pressed_esc == 1)
 #endif
             {
                 level_set_transition(0, 0);

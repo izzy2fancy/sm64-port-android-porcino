@@ -43,25 +43,25 @@ ConfigWindow configWindow       = {
     .y = WAPI_WIN_CENTERPOS,
     .w = DESIRED_SCREEN_WIDTH,
     .h = DESIRED_SCREEN_HEIGHT,
-    .vsync = 1,
+    .vsync = false,
     .reset = false,
     .fullscreen = false,
     .exiting_fullscreen = false,
     .settings_changed = false,
 };
 unsigned int configFiltering    = 1;          // 0=force nearest, 1=linear, (TODO) 2=three-point
-unsigned int configMasterVolume = MAX_VOLUME; // 0 - MAX_VOLUME
+unsigned int configMasterVolume = 30; // 0 - MAX_VOLUME
 unsigned int configMusicVolume = MAX_VOLUME;
 unsigned int configSfxVolume = MAX_VOLUME;
 unsigned int configEnvVolume = MAX_VOLUME;
 
 // Keyboard mappings (VK_ values, by default keyboard/gamepad/mouse)
-unsigned int configKeyA[MAX_BINDS]          = { 0x0026,   0x1000,     0x1103     };
-unsigned int configKeyB[MAX_BINDS]          = { 0x0033,   0x1002,     0x1101     };
-unsigned int configKeyStart[MAX_BINDS]      = { 0x0039,   0x1006,     VK_INVALID };
-unsigned int configKeyL[MAX_BINDS]          = { 0x002A,   0x1009,     0x1104     };
-unsigned int configKeyR[MAX_BINDS]          = { 0x0036,   0x100A,     0x101B     };
-unsigned int configKeyZ[MAX_BINDS]          = { 0x0025,   0x1007,     0x101A     };
+unsigned int configKeyA[MAX_BINDS]          = { 0x0039,   0x1000,     0x1103     };
+unsigned int configKeyB[MAX_BINDS]          = { 0x0021,   0x1002,     0x1101     };
+unsigned int configKeyStart[MAX_BINDS]      = { 0x001C,   0x1006,     VK_INVALID };
+unsigned int configKeyL[MAX_BINDS]          = { 0x002D,   0x1009,     0x1104     };
+unsigned int configKeyR[MAX_BINDS]          = { 0x002E,   0x100A,     0x101B     };
+unsigned int configKeyZ[MAX_BINDS]          = { 0x001D,   0x1007,     0x1102     };
 unsigned int configKeyCUp[MAX_BINDS]        = { 0x0148,   VK_INVALID, VK_INVALID };
 unsigned int configKeyCDown[MAX_BINDS]      = { 0x0150,   VK_INVALID, VK_INVALID };
 unsigned int configKeyCLeft[MAX_BINDS]      = { 0x014B,   VK_INVALID, VK_INVALID };
@@ -70,26 +70,34 @@ unsigned int configKeyStickUp[MAX_BINDS]    = { 0x0011,   VK_INVALID, VK_INVALID
 unsigned int configKeyStickDown[MAX_BINDS]  = { 0x001F,   VK_INVALID, VK_INVALID };
 unsigned int configKeyStickLeft[MAX_BINDS]  = { 0x001E,   VK_INVALID, VK_INVALID };
 unsigned int configKeyStickRight[MAX_BINDS] = { 0x0020,   VK_INVALID, VK_INVALID };
+unsigned int configKeyMouseToStick[MAX_BINDS] = { 0x002C,   VK_INVALID, VK_INVALID };
+unsigned int configKeyWalk[MAX_BINDS] =       { 0x002A,   VK_INVALID, VK_INVALID };
 unsigned int configStickDeadzone = 16; // 16*DEADZONE_STEP=4960 (the original default deadzone)
 unsigned int configRumbleStrength = 50;
 #ifdef EXTERNAL_DATA
-bool configPrecacheRes = true;
+bool configPrecacheRes = false;
 #endif
 #ifdef BETTERCAMERA
 // BetterCamera settings
 unsigned int configCameraXSens   = 50;
 unsigned int configCameraYSens   = 50;
-unsigned int configCameraAggr    = 0;
+unsigned int configCameraAggr    = 20;
 unsigned int configCameraPan     = 0;
-unsigned int configCameraDegrade = 10; // 0 - 100%
+unsigned int configCameraDegrade = 100; // 0 - 100%
 bool         configCameraInvertX = true;
 bool         configCameraInvertY = false;
-bool         configEnableCamera  = false;
-bool         configCameraAnalog  = true;
-bool         configCameraMouse   = false;
+bool         configEnableCamera  = true;
+bool         configCameraAnalog  = false;
+bool         configCameraMouse   = true;
 #endif
 bool         configSkipIntro     = 0;
+bool         configInputDisplay  = true;
+bool         configFrameskip     = true;
 bool         configHUD           = true;
+unsigned int configSpeed         = 2;
+#ifndef NODRAWINGDISTANCE
+unsigned int configDrawDistance  = 200;
+#endif
 #ifdef DISCORDRPC
 bool         configDiscordRPC    = true;
 #endif
@@ -102,6 +110,10 @@ static const struct ConfigOption options[] = {
     {.name = "window_h",             .type = CONFIG_TYPE_UINT, .uintValue = &configWindow.h},
     {.name = "vsync",                .type = CONFIG_TYPE_BOOL, .boolValue = &configWindow.vsync},
     {.name = "texture_filtering",    .type = CONFIG_TYPE_UINT, .uintValue = &configFiltering},
+    {.name = "frameskip",            .type = CONFIG_TYPE_BOOL, .boolValue = &configFrameskip},
+    #ifndef NODRAWINGDISTANCE
+    {.name = "drawing_distance",     .type = CONFIG_TYPE_UINT, .uintValue = &configDrawDistance},
+    #endif
     {.name = "master_volume",        .type = CONFIG_TYPE_UINT, .uintValue = &configMasterVolume},
     {.name = "music_volume",         .type = CONFIG_TYPE_UINT, .uintValue = &configMusicVolume},
     {.name = "sfx_volume",           .type = CONFIG_TYPE_UINT, .uintValue = &configSfxVolume},
@@ -120,6 +132,9 @@ static const struct ConfigOption options[] = {
     {.name = "key_stickdown",        .type = CONFIG_TYPE_BIND, .uintValue = configKeyStickDown},
     {.name = "key_stickleft",        .type = CONFIG_TYPE_BIND, .uintValue = configKeyStickLeft},
     {.name = "key_stickright",       .type = CONFIG_TYPE_BIND, .uintValue = configKeyStickRight},
+    {.name = "key_mouse_to_stick",   .type = CONFIG_TYPE_BIND, .uintValue = configKeyMouseToStick},
+    {.name = "key_walk",             .type = CONFIG_TYPE_BIND, .uintValue = configKeyWalk},
+    {.name = "walking_speed",        .type = CONFIG_TYPE_UINT, .uintValue = &configSpeed},
     {.name = "stick_deadzone",       .type = CONFIG_TYPE_UINT, .uintValue = &configStickDeadzone},
     {.name = "rumble_strength",      .type = CONFIG_TYPE_UINT, .uintValue = &configRumbleStrength},
     #ifdef EXTERNAL_DATA
@@ -138,6 +153,7 @@ static const struct ConfigOption options[] = {
     {.name = "bettercam_degrade",    .type = CONFIG_TYPE_UINT, .uintValue = &configCameraDegrade},
     #endif
     {.name = "skip_intro",           .type = CONFIG_TYPE_BOOL, .boolValue = &configSkipIntro},
+    {.name = "input_display",        .type = CONFIG_TYPE_BOOL, .boolValue = &configInputDisplay},
     #ifdef DISCORDRPC
     {.name = "discordrpc_enable",    .type = CONFIG_TYPE_BOOL, .boolValue = &configDiscordRPC},
     #endif 

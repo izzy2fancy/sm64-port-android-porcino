@@ -545,7 +545,9 @@ static uint32_t gfx_cm_to_opengl(uint32_t val) {
 static void gfx_opengl_set_sampler_parameters(int tile, bool linear_filter, uint32_t cms, uint32_t cmt) {
     const GLenum filter = linear_filter ? GL_LINEAR : GL_NEAREST;
     glActiveTexture(GL_TEXTURE0 + tile);
+#ifndef EXTERNAL_DATA
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, filter);
+#endif
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, filter);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, gfx_cm_to_opengl(cms));
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, gfx_cm_to_opengl(cmt));

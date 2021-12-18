@@ -1470,10 +1470,10 @@ s32 update_fixed_camera(struct Camera *c, Vec3f focus, UNUSED Vec3f pos) {
             heightOffset = 0.f;
             break;
 
-        case AREA_BBH:
+        /* case AREA_BBH:
             scaleToMario = 0.f;
             heightOffset = 0.f;
-            break;
+            break; */
     }
 
     handle_c_button_movement(c);
@@ -5179,14 +5179,14 @@ u8 get_cutscene_from_mario_status(struct Camera *c) {
                         cutscene = open_door_cutscene(CUTSCENE_DOOR_PULL, CUTSCENE_DOOR_PUSH);
                     }
                     break;
-                case AREA_BBH:
+                /* case AREA_BBH:
                     //! Castle Lobby uses 0 to mean 'no special modes', but BBH uses 1...
                     if (c->doorStatus == DOOR_LEAVING_SPECIAL) {
                         cutscene = open_door_cutscene(CUTSCENE_DOOR_PULL, CUTSCENE_DOOR_PUSH);
                     } else {
                         cutscene = open_door_cutscene(CUTSCENE_DOOR_PULL_MODE, CUTSCENE_DOOR_PUSH_MODE);
                     }
-                    break;
+                    break; */
                 default:
                     cutscene = open_door_cutscene(CUTSCENE_DOOR_PULL, CUTSCENE_DOOR_PUSH);
                     break;
@@ -10520,9 +10520,9 @@ struct Cutscene sCutsceneCredits[] = {
  */
 struct Cutscene sCutsceneDoorPull[] = {
     { cutscene_door_start, 1 },
-    { cutscene_door_fix_cam, 30 },
+    /* { cutscene_door_fix_cam, 30 },
     { cutscene_door_move_behind_mario, 1 },
-    { cutscene_door_follow_mario, 50 },
+    { cutscene_door_follow_mario, 50 }, */
     { cutscene_door_end, 0 }
 };
 
@@ -10543,7 +10543,7 @@ struct Cutscene sCutsceneDoorPush[] = {
  */
 struct Cutscene sCutsceneDoorPullMode[] = {
     { cutscene_door_start, 1 },
-    { cutscene_door_fix_cam, 30 },
+    // { cutscene_door_fix_cam, 30 },
     { cutscene_door_mode, CUTSCENE_LOOP }
 };
 
@@ -10553,7 +10553,7 @@ struct Cutscene sCutsceneDoorPullMode[] = {
  */
 struct Cutscene sCutsceneDoorPushMode[] = {
     { cutscene_door_start, 1 },
-    { cutscene_door_fix_cam, 20 },
+    // { cutscene_door_fix_cam, 20 },
     { cutscene_door_mode, CUTSCENE_LOOP }
 };
 
@@ -10595,7 +10595,7 @@ struct Cutscene sCutsceneEnterPainting[] = {
  * Cutscene that plays when Mario dies and warps back to the castle.
  */
 struct Cutscene sCutsceneDeathExit[] = {
-    { cutscene_exit_painting, 118 },
+    { cutscene_exit_painting, 35 },
     { cutscene_exit_painting_end, 0 }
 };
 
@@ -10603,7 +10603,7 @@ struct Cutscene sCutsceneDeathExit[] = {
  * Cutscene that plays when Mario warps to the castle after collecting a star.
  */
 struct Cutscene sCutsceneExitPaintingSuccess[] = {
-    { cutscene_exit_painting, 180 },
+    { cutscene_exit_painting, 35 },
     { cutscene_exit_painting_end, 0 }
 };
 
@@ -10790,7 +10790,7 @@ struct Cutscene sCutsceneUnlockKeyDoor[] = {
  * Cutscene that plays when Mario exits bowser's arena after getting the key.
  */
 struct Cutscene sCutsceneExitBowserSuccess[] = {
-    { cutscene_exit_bowser_succ, 190 },
+    { cutscene_exit_bowser_succ, 50 },
     { cutscene_non_painting_end, 0 }
 };
 
@@ -10798,7 +10798,7 @@ struct Cutscene sCutsceneExitBowserSuccess[] = {
  * Unused cutscene for when Mario dies in bowser's arena. Instead, Mario just respawns at the warp pipe.
  */
 struct Cutscene sCutsceneExitBowserDeath[] = {
-    { cutscene_exit_bowser_death, 120 },
+    { cutscene_exit_bowser_death, 50 },
     { cutscene_non_painting_end, 0 }
 };
 
@@ -10806,7 +10806,7 @@ struct Cutscene sCutsceneExitBowserDeath[] = {
  * Cutscene that plays when Mario exits a non-painting course, like HMC.
  */
 struct Cutscene sCutsceneExitSpecialSuccess[] = {
-    { cutscene_exit_non_painting_succ, 163 },
+    { cutscene_exit_non_painting_succ, 50 },
     { cutscene_non_painting_end, 0 }
 };
 
@@ -10814,7 +10814,7 @@ struct Cutscene sCutsceneExitSpecialSuccess[] = {
  * Cutscene that plays when Mario exits from dying in a non-painting course, like HMC.
  */
 struct Cutscene sCutsceneNonPaintingDeath[] = {
-    { cutscene_non_painting_death, 120 },
+    { cutscene_non_painting_death, 50 },
     { cutscene_non_painting_end, 0 }
 };
 
@@ -11246,61 +11246,62 @@ void play_cutscene(struct Camera *c) {
 
     unusedYawFocToMario = sAreaYaw;
     oldCutscene = c->cutscene;
-    sStatusFlags &= ~CAM_FLAG_SMOOTH_MOVEMENT;
+        
     gCameraMovementFlags &= ~CAM_MOVING_INTO_MODE;
 
-#define CUTSCENE(id, cutscene)                                                                            \
+#define CUTSCENE(id, cutscene, smooth)                                                                            \
     case id:                                                                                              \
         cutsceneDuration = cutscene[sCutsceneShot].duration;                                              \
         cutscene[sCutsceneShot].shot(c);                                                                  \
+        if (!smooth) sStatusFlags &= ~CAM_FLAG_SMOOTH_MOVEMENT;                                           \
         break;
 
     switch (c->cutscene) {
-        CUTSCENE(CUTSCENE_STAR_SPAWN, sCutsceneStarSpawn)
-        CUTSCENE(CUTSCENE_RED_COIN_STAR_SPAWN, sCutsceneRedCoinStarSpawn)
-        CUTSCENE(CUTSCENE_ENDING, sCutsceneEnding)
-        CUTSCENE(CUTSCENE_GRAND_STAR, sCutsceneGrandStar)
-        CUTSCENE(CUTSCENE_DOOR_WARP, sCutsceneDoorWarp)
-        CUTSCENE(CUTSCENE_DOOR_PULL, sCutsceneDoorPull)
-        CUTSCENE(CUTSCENE_DOOR_PUSH, sCutsceneDoorPush)
-        CUTSCENE(CUTSCENE_DOOR_PULL_MODE, sCutsceneDoorPullMode)
-        CUTSCENE(CUTSCENE_DOOR_PUSH_MODE, sCutsceneDoorPushMode)
-        CUTSCENE(CUTSCENE_ENTER_CANNON, sCutsceneEnterCannon)
-        CUTSCENE(CUTSCENE_ENTER_PAINTING, sCutsceneEnterPainting)
-        CUTSCENE(CUTSCENE_DEATH_EXIT, sCutsceneDeathExit)
-        CUTSCENE(CUTSCENE_EXIT_PAINTING_SUCC, sCutsceneExitPaintingSuccess)
-        CUTSCENE(CUTSCENE_UNUSED_EXIT, sCutsceneUnusedExit)
-        CUTSCENE(CUTSCENE_INTRO_PEACH, sCutsceneIntroPeach)
-        CUTSCENE(CUTSCENE_ENTER_BOWSER_ARENA, sCutsceneEnterBowserArena)
-        CUTSCENE(CUTSCENE_DANCE_ROTATE, sCutsceneDanceDefaultRotate)
-        CUTSCENE(CUTSCENE_DANCE_DEFAULT, sCutsceneDanceDefaultRotate)
-        CUTSCENE(CUTSCENE_DANCE_FLY_AWAY, sCutsceneDanceFlyAway)
-        CUTSCENE(CUTSCENE_DANCE_CLOSEUP, sCutsceneDanceCloseup)
-        CUTSCENE(CUTSCENE_KEY_DANCE, sCutsceneKeyDance)
-        CUTSCENE(CUTSCENE_0F_UNUSED, sCutsceneUnused)
-        CUTSCENE(CUTSCENE_END_WAVING, sCutsceneEndWaving)
-        CUTSCENE(CUTSCENE_CREDITS, sCutsceneCredits)
-        CUTSCENE(CUTSCENE_CAP_SWITCH_PRESS, sCutsceneCapSwitchPress)
-        CUTSCENE(CUTSCENE_SLIDING_DOORS_OPEN, sCutsceneSlidingDoorsOpen)
-        CUTSCENE(CUTSCENE_PREPARE_CANNON, sCutscenePrepareCannon)
-        CUTSCENE(CUTSCENE_UNLOCK_KEY_DOOR, sCutsceneUnlockKeyDoor)
-        CUTSCENE(CUTSCENE_STANDING_DEATH, sCutsceneStandingDeath)
-        CUTSCENE(CUTSCENE_ENTER_POOL, sCutsceneEnterPool)
-        CUTSCENE(CUTSCENE_DEATH_ON_STOMACH, sCutsceneDeathStomach)
-        CUTSCENE(CUTSCENE_DEATH_ON_BACK, sCutsceneDeathOnBack)
-        CUTSCENE(CUTSCENE_QUICKSAND_DEATH, sCutsceneQuicksandDeath)
-        CUTSCENE(CUTSCENE_SUFFOCATION_DEATH, sCutsceneSuffocation)
-        CUTSCENE(CUTSCENE_EXIT_BOWSER_SUCC, sCutsceneExitBowserSuccess)
-        CUTSCENE(CUTSCENE_EXIT_BOWSER_DEATH, sCutsceneExitBowserDeath)
-        CUTSCENE(CUTSCENE_EXIT_SPECIAL_SUCC, sCutsceneExitSpecialSuccess)
-        CUTSCENE(CUTSCENE_EXIT_WATERFALL, sCutsceneExitWaterfall)
-        CUTSCENE(CUTSCENE_EXIT_FALL_WMOTR, sCutsceneFallToCastleGrounds)
-        CUTSCENE(CUTSCENE_NONPAINTING_DEATH, sCutsceneNonPaintingDeath)
-        CUTSCENE(CUTSCENE_DIALOG, sCutsceneDialog)
-        CUTSCENE(CUTSCENE_READ_MESSAGE, sCutsceneReadMessage)
-        CUTSCENE(CUTSCENE_RACE_DIALOG, sCutsceneDialog)
-        CUTSCENE(CUTSCENE_ENTER_PYRAMID_TOP, sCutsceneEnterPyramidTop)
-        CUTSCENE(CUTSCENE_SSL_PYRAMID_EXPLODE, sCutscenePyramidTopExplode)
+        CUTSCENE(CUTSCENE_STAR_SPAWN, sCutsceneStarSpawn, 0)
+        CUTSCENE(CUTSCENE_RED_COIN_STAR_SPAWN, sCutsceneRedCoinStarSpawn, 0)
+        CUTSCENE(CUTSCENE_ENDING, sCutsceneEnding, 0)
+        CUTSCENE(CUTSCENE_GRAND_STAR, sCutsceneGrandStar, 0)
+        CUTSCENE(CUTSCENE_DOOR_WARP, sCutsceneDoorPull, 1)
+        CUTSCENE(CUTSCENE_DOOR_PULL, sCutsceneDoorPull, 1)
+        CUTSCENE(CUTSCENE_DOOR_PUSH, sCutsceneDoorPull, 1)
+        CUTSCENE(CUTSCENE_DOOR_PULL_MODE, sCutsceneDoorPullMode, 0)
+        CUTSCENE(CUTSCENE_DOOR_PUSH_MODE, sCutsceneDoorPushMode, 0)
+        CUTSCENE(CUTSCENE_ENTER_CANNON, sCutsceneEnterCannon, 0)
+        CUTSCENE(CUTSCENE_ENTER_PAINTING, sCutsceneEnterPainting, 0)
+        CUTSCENE(CUTSCENE_DEATH_EXIT, sCutsceneDeathExit, 1)
+        CUTSCENE(CUTSCENE_EXIT_PAINTING_SUCC, sCutsceneExitPaintingSuccess, 1)
+        CUTSCENE(CUTSCENE_UNUSED_EXIT, sCutsceneUnusedExit, 0)
+        CUTSCENE(CUTSCENE_INTRO_PEACH, sCutsceneIntroPeach, 0)
+        CUTSCENE(CUTSCENE_ENTER_BOWSER_ARENA, sCutsceneEnterBowserArena, 0)
+        CUTSCENE(CUTSCENE_DANCE_ROTATE, sCutsceneDanceDefaultRotate, 0)
+        CUTSCENE(CUTSCENE_DANCE_DEFAULT, sCutsceneDanceDefaultRotate, 0)
+        CUTSCENE(CUTSCENE_DANCE_FLY_AWAY, sCutsceneDanceFlyAway, 0)
+        CUTSCENE(CUTSCENE_DANCE_CLOSEUP, sCutsceneDanceCloseup, 0)
+        CUTSCENE(CUTSCENE_KEY_DANCE, sCutsceneKeyDance, 0)
+        CUTSCENE(CUTSCENE_0F_UNUSED, sCutsceneUnused, 0)
+        CUTSCENE(CUTSCENE_END_WAVING, sCutsceneEndWaving, 0)
+        CUTSCENE(CUTSCENE_CREDITS, sCutsceneCredits, 0)
+        CUTSCENE(CUTSCENE_CAP_SWITCH_PRESS, sCutsceneCapSwitchPress, 0)
+        CUTSCENE(CUTSCENE_SLIDING_DOORS_OPEN, sCutsceneDoorPull, 1)
+        CUTSCENE(CUTSCENE_PREPARE_CANNON, sCutscenePrepareCannon, 0)
+        CUTSCENE(CUTSCENE_UNLOCK_KEY_DOOR, sCutsceneUnlockKeyDoor, 0)
+        CUTSCENE(CUTSCENE_STANDING_DEATH, sCutsceneStandingDeath, 0)
+        CUTSCENE(CUTSCENE_ENTER_POOL, sCutsceneEnterPool, 0)
+        CUTSCENE(CUTSCENE_DEATH_ON_STOMACH, sCutsceneDeathStomach, 0)
+        CUTSCENE(CUTSCENE_DEATH_ON_BACK, sCutsceneDeathOnBack, 0)
+        CUTSCENE(CUTSCENE_QUICKSAND_DEATH, sCutsceneQuicksandDeath, 0)
+        CUTSCENE(CUTSCENE_SUFFOCATION_DEATH, sCutsceneSuffocation, 0)
+        CUTSCENE(CUTSCENE_EXIT_BOWSER_SUCC, sCutsceneExitBowserSuccess, 1)
+        CUTSCENE(CUTSCENE_EXIT_BOWSER_DEATH, sCutsceneExitBowserDeath, 1)
+        CUTSCENE(CUTSCENE_EXIT_SPECIAL_SUCC, sCutsceneExitSpecialSuccess, 1)
+        CUTSCENE(CUTSCENE_EXIT_WATERFALL, sCutsceneExitWaterfall, 0)
+        CUTSCENE(CUTSCENE_EXIT_FALL_WMOTR, sCutsceneFallToCastleGrounds, 0)
+        CUTSCENE(CUTSCENE_NONPAINTING_DEATH, sCutsceneNonPaintingDeath, 1)
+        CUTSCENE(CUTSCENE_DIALOG, sCutsceneDialog, 0)
+        CUTSCENE(CUTSCENE_READ_MESSAGE, sCutsceneReadMessage, 0)
+        CUTSCENE(CUTSCENE_RACE_DIALOG, sCutsceneDialog, 0)
+        CUTSCENE(CUTSCENE_ENTER_PYRAMID_TOP, sCutsceneEnterPyramidTop, 0)
+        CUTSCENE(CUTSCENE_SSL_PYRAMID_EXPLODE, sCutscenePyramidTopExplode, 0)
     }
 
 #undef CUTSCENE
@@ -11509,7 +11510,7 @@ Gfx *geo_camera_fov(s32 callContext, struct GraphNode *g, UNUSED void *context) 
                 zoom_fov_30(marioState);
                 break;
             case CAM_FOV_DEFAULT:
-                fov_default(marioState);
+                //fov_default(marioState);
                 break;
             case CAM_FOV_BBH:
                 set_fov_bbh(marioState);

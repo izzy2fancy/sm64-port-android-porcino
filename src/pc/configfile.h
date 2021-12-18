@@ -37,6 +37,9 @@ extern unsigned int configKeyStickUp[];
 extern unsigned int configKeyStickDown[];
 extern unsigned int configKeyStickLeft[];
 extern unsigned int configKeyStickRight[];
+extern unsigned int configKeyMouseToStick[];
+extern unsigned int configKeyWalk[];
+extern unsigned int configSpeed;
 extern unsigned int configStickDeadzone;
 extern unsigned int configRumbleStrength;
 #ifdef EXTERNAL_DATA
@@ -54,7 +57,12 @@ extern bool         configEnableCamera;
 extern bool         configCameraMouse;
 extern bool         configCameraAnalog;
 #endif
+extern bool         configInputDisplay;
+extern bool         configFrameskip;
 extern bool         configHUD;
+#ifndef NODRAWINGDISTANCE
+extern unsigned int configDrawDistance;
+#endif
 extern bool         configSkipIntro;
 #ifdef DISCORDRPC
 extern bool         configDiscordRPC;

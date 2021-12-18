@@ -12,6 +12,7 @@
 #include "game/segment2.h"
 #include "gfx_dimensions.h"
 #include "pc/gfx/gfx_pc.h"
+#include "pc/configfile.h"
 
 #include "controller_api.h"
 #include "controller_touchscreen.h"
@@ -25,7 +26,7 @@
 #define CORRECT_TOUCH_X(x) ((x * (RIGHT_EDGE - LEFT_EDGE)) + LEFT_EDGE)
 #define CORRECT_TOUCH_Y(y) (y * SCREEN_HEIGHT_API)
 
-#define JOYSTICK_SIZE 280
+#define JOYSTICK_SIZE 460
 
 enum ControlElementType {
     Joystick,
@@ -70,7 +71,7 @@ void touch_down(struct TouchEvent* event) {
                     }
                     break;
                 case Button:
-                    if (TRIGGER_DETECT(120)) {
+                    if (TRIGGER_DETECT(220)) {
                         ControlElements[i].touchID = event->touchID;
                     }
                     break;
@@ -104,7 +105,7 @@ void touch_motion(struct TouchEvent* event) {
                         ControlElements[i].joyY = y;
                         break;
                     case Button:
-                        if (ControlElements[i].slideTouch && !TRIGGER_DETECT(120)) {
+                        if (ControlElements[i].slideTouch && !TRIGGER_DETECT(220)) {
                             ControlElements[i].slideTouch = 0;
                             ControlElements[i].touchID = 0;
                         }
@@ -116,7 +117,7 @@ void touch_motion(struct TouchEvent* event) {
                 case Joystick:
                     break;
                 case Button:
-                    if (TRIGGER_DETECT(120)) {
+                    if (TRIGGER_DETECT(220)) {
                         ControlElements[i].slideTouch = 1;
                         ControlElements[i].touchID = event->touchID;
                     }
@@ -184,6 +185,7 @@ static void DrawSprite(s32 x, s32 y, int scaling) {
 }
 
 void render_touch_controls(void) {
+	if(configInputDisplay){
     Mtx *mtx;
 
     mtx = alloc_display_list(sizeof(*mtx));
@@ -218,6 +220,7 @@ void render_touch_controls(void) {
     }
 
     gSPDisplayList(gDisplayListHead++, dl_hud_img_end);
+    }
 }
 
 static void touchscreen_init(void) {
