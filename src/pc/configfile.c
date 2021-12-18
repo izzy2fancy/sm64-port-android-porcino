@@ -48,8 +48,10 @@ ConfigWindow configWindow       = {
     .fullscreen = false,
     .exiting_fullscreen = false,
     .settings_changed = false,
+    .aa_changed = false,
 };
 unsigned int configFiltering    = 1;          // 0=force nearest, 1=linear, (TODO) 2=three-point
+bool         configAntiAliasing = true;
 unsigned int configMasterVolume = 30; // 0 - MAX_VOLUME
 unsigned int configMusicVolume = MAX_VOLUME;
 unsigned int configSfxVolume = MAX_VOLUME;
@@ -87,6 +89,7 @@ unsigned int configCameraDegrade = 100; // 0 - 100%
 bool         configCameraInvertX = true;
 bool         configCameraInvertY = false;
 bool         configEnableCamera  = true;
+bool         configCameraFOV     = true;
 bool         configCameraAnalog  = false;
 bool         configCameraMouse   = true;
 #endif
@@ -142,6 +145,7 @@ static const struct ConfigOption options[] = {
     #endif
     #ifdef BETTERCAMERA
     {.name = "bettercam_enable",     .type = CONFIG_TYPE_BOOL, .boolValue = &configEnableCamera},
+    {.name = "bettercam_fov",        .type = CONFIG_TYPE_BOOL, .boolValue = &configCameraFOV},
     {.name = "bettercam_analog",     .type = CONFIG_TYPE_BOOL, .boolValue = &configCameraAnalog},
     {.name = "bettercam_mouse_look", .type = CONFIG_TYPE_BOOL, .boolValue = &configCameraMouse},
     {.name = "bettercam_invertx",    .type = CONFIG_TYPE_BOOL, .boolValue = &configCameraInvertX},

@@ -75,11 +75,13 @@ static const u8 optsCameraStr[][32] = {
     { TEXT_OPT_MOUSE },
     { TEXT_OPT_CAMD },
     { TEXT_OPT_CAMON },
+    { TEXT_OPT_CAMFOV },
 };
 
 static const u8 optsVideoStr[][32] = {
     { TEXT_OPT_FSCREEN },
     { TEXT_OPT_TEXFILTER },
+    { TEXT_OPT_ANTIALIASING },
     { TEXT_OPT_NEAREST },
     { TEXT_OPT_LINEAR },
     { TEXT_OPT_RESETWND },
@@ -482,15 +484,15 @@ static const u8 bindKeyNames[][32] = {
 };
 
 static const u8 *filterChoices[] = {
-    optsVideoStr[2],
     optsVideoStr[3],
-    optsVideoStr[10],
+    optsVideoStr[4],
+    //optsVideoStr[11],
 };
 
 static const u8 *vsyncChoices[] = {
     toggleStr[0],
     toggleStr[1],
-    optsVideoStr[6],
+    optsVideoStr[7],
 };
 
 enum OptType {
@@ -566,7 +568,7 @@ static void optmenu_act_leave(UNUSED struct Option *self, s32 arg) {
 }
 
 static void optvideo_reset_window(UNUSED struct Option *self, s32 arg) {
-    if (!arg) {
+    if (!arg || arg) {
         // Restrict reset to A press and not directions
         configWindow.reset = true;
         configWindow.settings_changed = true;
@@ -584,6 +586,7 @@ static struct Option optsCamera[] = {
     DEF_OPT_TOGGLE( optsCameraStr[9], &configEnableCamera ),
     //DEF_OPT_TOGGLE( optsCameraStr[6], &configCameraAnalog ),
     DEF_OPT_TOGGLE( optsCameraStr[7], &configCameraMouse ),
+    DEF_OPT_TOGGLE( optsCameraStr[10],&configCameraFOV ),
     DEF_OPT_TOGGLE( optsCameraStr[2], &configCameraInvertX ),
     DEF_OPT_TOGGLE( optsCameraStr[3], &configCameraInvertY ),
     DEF_OPT_SCROLL( optsCameraStr[0], &configCameraXSens, 1, 100, 1 ),
@@ -620,16 +623,16 @@ static struct Option optsControls[] = {
 
 static struct Option optsVideo[] = {
     DEF_OPT_TOGGLE( optsVideoStr[0], &configWindow.fullscreen ),
-    DEF_OPT_TOGGLE( optsVideoStr[5], &configWindow.vsync ),
+    DEF_OPT_TOGGLE( optsVideoStr[6], &configWindow.vsync ),
     DEF_OPT_CHOICE( optsVideoStr[1], &configFiltering, filterChoices ),
-    DEF_OPT_TOGGLE( optsVideoStr[7], &configInputDisplay ),
-    DEF_OPT_TOGGLE( optsVideoStr[8], &configFrameskip ),
-    DEF_OPT_TOGGLE( optsVideoStr[9], &configHUD ),
+    DEF_OPT_TOGGLE( optsVideoStr[2], &configAntiAliasing ),
+    DEF_OPT_TOGGLE( optsVideoStr[9], &configFrameskip ),
 #ifndef NODRAWINGDISTANCE
-    DEF_OPT_SCROLL( optsVideoStr[11], &configDrawDistance, 50, 509, 10 ),
+    DEF_OPT_SCROLL( optsVideoStr[12], &configDrawDistance, 50, 509, 10 ),
 #endif
-    DEF_OPT_BUTTON( optsVideoStr[4], optvideo_reset_window ),
-    DEF_OPT_BUTTON( optsVideoStr[12], optvideo_apply ),
+    DEF_OPT_TOGGLE( optsVideoStr[8], &configInputDisplay ),
+    DEF_OPT_TOGGLE( optsVideoStr[10], &configHUD ),
+    DEF_OPT_BUTTON( optsVideoStr[5], optvideo_reset_window ),
 };
 
 static struct Option optsAudio[] = {
@@ -718,10 +721,14 @@ static void optmenu_draw_text(s16 x, s16 y, const u8 *str, u8 col) {
     const u8 textX = get_str_x_pos_from_center(x, (u8*)str, 10.0f);
     gDPSetEnvColor(gDisplayListHead++, 0, 0, 0, 255);
     print_generic_string(textX+1, y-1, str);
-    if (col == 0) {
-        gDPSetEnvColor(gDisplayListHead++, 255, 255, 255, 255);
+    if (col == 3) {
+        gDPSetEnvColor(gDisplayListHead++, 255, 215, 0, 255);
+    } else if (col == 2) {
+        gDPSetEnvColor(gDisplayListHead++, 170, 170, 100, 255);
+    } else if (col == 0) {
+        gDPSetEnvColor(gDisplayListHead++, 128, 128, 128, 255);
     } else {
-        gDPSetEnvColor(gDisplayListHead++, 255, 32, 32, 255);
+        gDPSetEnvColor(gDisplayListHead++, 255, 255, 255, 255);
     }
     print_generic_string(textX, y, str);
 }
@@ -732,7 +739,7 @@ static void optmenu_draw_opt(const struct Option *opt, s16 x, s16 y, u8 sel) {
     if (opt->type == OPT_SUBMENU || opt->type == OPT_BUTTON)
         y -= 6;
 
-    optmenu_draw_text(x, y, opt->label, sel);
+    optmenu_draw_text(x, y, opt->label, sel ? 3 : 2);
 
     switch (opt->type) {
         case OPT_TOGGLE:
@@ -781,9 +788,11 @@ static void optmenu_opt_change(struct Option *opt, s32 val) {
     switch (opt->type) {
         case OPT_TOGGLE:
             *opt->bval = !*opt->bval;
+            if (opt->label[0] == 15) configWindow.settings_changed = true;
             break;
 
         case OPT_CHOICE:
+            if (opt->label[0] == 29) configWindow.aa_changed = true;
             *opt->uval = wrap_add(*opt->uval, val, 0, opt->numChoices - 1);
             break;
 
@@ -830,39 +839,48 @@ void optmenu_draw(void) {
     s16 scroll;
     s16 scrollpos;
 
+    Mtx *matrix = (Mtx *) alloc_display_list(sizeof(Mtx));
+    if (!matrix) return;
+    create_dl_translation_matrix(MENU_MTX_PUSH, -1500, SCREEN_HEIGHT, 1);
+    guScale(matrix, 30.f, 8.f, 0);
+    gSPMatrix(gDisplayListHead++, VIRTUAL_TO_PHYSICAL(matrix), G_MTX_MODELVIEW | G_MTX_MUL | G_MTX_NOPUSH);
+    gDPSetEnvColor(gDisplayListHead++, 0, 0, 0, 175);
+    gSPDisplayList(gDisplayListHead++, dl_draw_text_bg_box);
+    gSPPopMatrix(gDisplayListHead++, G_MTX_MODELVIEW);
+
     const s16 labelX = get_hudstr_centered_x(160, currentMenu->label);
     gSPDisplayList(gDisplayListHead++, dl_rgba16_text_begin);
     gDPSetEnvColor(gDisplayListHead++, 255, 255, 255, 255);
-    print_hud_lut_string(HUD_LUT_GLOBAL, labelX, 40, currentMenu->label);
+    print_hud_lut_string(HUD_LUT_GLOBAL, labelX, 10, currentMenu->label);
     gSPDisplayList(gDisplayListHead++, dl_rgba16_text_end);
 
-    if (currentMenu->numOpts > 4) {
-        optmenu_draw_box(272, 90, 280, 208, 0x80, 0x80, 0x80);
-        scrollpos = 54 * ((f32)currentMenu->scroll / (currentMenu->numOpts-4));
-        optmenu_draw_box(272, 90+scrollpos, 280, 154+scrollpos, 0xFF, 0xFF, 0xFF);
+    if (currentMenu->numOpts > 7) {
+        optmenu_draw_box(272, 38, 280, 228, 0x80, 0x80, 0x80);
+        scrollpos = 64 * ((f32)currentMenu->scroll / (currentMenu->numOpts-7));
+        optmenu_draw_box(272, 38+scrollpos, 280, 164+scrollpos, 0xAA, 0xAA, 0x64);
     }
 
     gSPDisplayList(gDisplayListHead++, dl_ia_text_begin);
-    gDPSetScissor(gDisplayListHead++, G_SC_NON_INTERLACE, 0, 80, SCREEN_WIDTH, SCREEN_HEIGHT);
+    gDPSetScissor(gDisplayListHead++, G_SC_NON_INTERLACE, 0, 0, SCREEN_WIDTH, SCREEN_HEIGHT);
     
     for (u8 i = 0; i < currentMenu->numOpts; i++) {
-        scroll = 140 - 32 * i + currentMenu->scroll * 32;
+        scroll = 200 - 28 * i + currentMenu->scroll * 28;
         // FIXME: just start from the first visible option bruh
-        if (scroll <= 140 && scroll > 32)
-            optmenu_draw_opt(&currentMenu->opts[i], 160, scroll, (currentMenu->select == i));
+        if (scroll <= 200 && scroll > 28)
+            optmenu_draw_opt(&currentMenu->opts[i], 160, scroll-10, (currentMenu->select == i));
     }
 
     gDPSetScissor(gDisplayListHead++, G_SC_NON_INTERLACE, 0, 0, SCREEN_WIDTH, SCREEN_HEIGHT);
-    gDPSetEnvColor(gDisplayListHead++, 255, 255, 255, 255);
-    print_generic_string(72, 132 - (32 * (currentMenu->select - currentMenu->scroll)), optSmallStr[2]);
-    print_generic_string(232, 132 - (32 * (currentMenu->select - currentMenu->scroll)), optSmallStr[3]);
+    gDPSetEnvColor(gDisplayListHead++, 255, 215, 0, 255);
+    print_generic_string(72, 183 - (28 * (currentMenu->select - currentMenu->scroll)), optSmallStr[2]);
+    print_generic_string(232, 183 - (28 * (currentMenu->select - currentMenu->scroll)), optSmallStr[3]);
     gSPDisplayList(gDisplayListHead++, dl_ia_text_end);
 }
 
 //This has been separated for interesting reasons. Don't question it.
 void optmenu_draw_prompt(void) {
     gSPDisplayList(gDisplayListHead++, dl_ia_text_begin);
-    optmenu_draw_text(264, 212, optSmallStr[optmenu_open], 0);
+    optmenu_draw_text(264, 212, optSmallStr[optmenu_open], 1);
     gSPDisplayList(gDisplayListHead++, dl_ia_text_end);
 }
 
@@ -961,8 +979,8 @@ void optmenu_check_buttons(void) {
 
             if (currentMenu->select < currentMenu->scroll)
                 currentMenu->scroll = currentMenu->select;
-            else if (currentMenu->select > currentMenu->scroll + 3)
-                currentMenu->scroll = currentMenu->select - 3;
+            else if (currentMenu->select > currentMenu->scroll + 6)
+                currentMenu->scroll = currentMenu->select - 6;
         }
     } else if (ABS(gPlayer1Controller->stickX) > 60 || pressed_left || pressed_right) {
         struct Option *opt = &currentMenu->opts[currentMenu->select];

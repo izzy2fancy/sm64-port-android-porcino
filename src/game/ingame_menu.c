@@ -2946,13 +2946,11 @@ void render_course_complete_lvl_info_and_hud_str(void) {
 #if defined(VERSION_JP) || defined(VERSION_SH)
 #define TXT_SAVECONT_Y 2
 #define TXT_SAVEQUIT_Y 18
-#define TXT_SAVE_EXIT_GAME_Y 38
-#define TXT_CONTNOSAVE_Y 54
+#define TXT_CONTNOSAVE_Y 38
 #else
 #define TXT_SAVECONT_Y 0
 #define TXT_SAVEQUIT_Y 20
-#define TXT_SAVE_EXIT_GAME_Y 40
-#define TXT_CONTNOSAVE_Y 60
+#define TXT_CONTNOSAVE_Y 40
 #endif
 
 #ifdef VERSION_EU
@@ -2975,12 +2973,6 @@ void render_save_confirmation(s16 x, s16 y, s8 *index, s16 sp6e)
         { TEXT_SAVE_AND_QUIT_DE }
     };
 
-    u8 textSaveExitGame[][26] = { // New function to exit game
-        { TEXT_SAVE_EXIT_GAME },
-        { TEXT_SAVE_EXIT_GAME_FR },
-        { TEXT_SAVE_EXIT_GAME_DE }
-    };
-
     u8 textContinueWithoutSaveArr[][27] = {
         { TEXT_CONTINUE_WITHOUT_SAVING },
         { TEXT_CONTINUE_WITHOUT_SAVING_FR },
@@ -2989,24 +2981,21 @@ void render_save_confirmation(s16 x, s16 y, s8 *index, s16 sp6e)
 
 #define textSaveAndContinue textSaveAndContinueArr[gInGameLanguage]
 #define textSaveAndQuit textSaveAndQuitArr[gInGameLanguage]
-#define textSaveExitGame textSaveExitGame[gInGameLanguage]
 #define textContinueWithoutSave textContinueWithoutSaveArr[gInGameLanguage]
     s16 xOffset = get_str_x_pos_from_center(160, textContinueWithoutSaveArr[gInGameLanguage], 12.0f);
 #else
     u8 textSaveAndContinue[] = { TEXT_SAVE_AND_CONTINUE };
     u8 textSaveAndQuit[] = { TEXT_SAVE_AND_QUIT };
-    u8 textSaveExitGame[] = { TEXT_SAVE_EXIT_GAME };
     u8 textContinueWithoutSave[] = { TEXT_CONTINUE_WITHOUT_SAVING };
 #endif
 
-    handle_menu_scrolling(MENU_SCROLL_VERTICAL, index, 1, 4); // Increased to '4' to handle Exit Game 
+    handle_menu_scrolling(MENU_SCROLL_VERTICAL, index, 1, 3); // Increased to '4' to handle Exit Game 
 
     gSPDisplayList(gDisplayListHead++, dl_ia_text_begin);
     gDPSetEnvColor(gDisplayListHead++, 255, 255, 255, gDialogTextAlpha);
 
     print_generic_string(TXT_SAVEOPTIONS_X, y + TXT_SAVECONT_Y, textSaveAndContinue);
     print_generic_string(TXT_SAVEOPTIONS_X, y - TXT_SAVEQUIT_Y, textSaveAndQuit);
-    print_generic_string(TXT_SAVEOPTIONS_X, y - TXT_SAVE_EXIT_GAME_Y, textSaveExitGame);
     print_generic_string(TXT_SAVEOPTIONS_X, y - TXT_CONTNOSAVE_Y, textContinueWithoutSave);
 
     gSPDisplayList(gDisplayListHead++, dl_ia_text_end);

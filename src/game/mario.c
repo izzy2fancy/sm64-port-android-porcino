@@ -1262,7 +1262,7 @@ void squish_mario_model(struct MarioState *m) {
 void debug_print_speed_action_normal(struct MarioState *m) {
 #ifdef BETTERCAMERA
     mouseCursor = FALSE;
-    if ((gMarioState->action & ACT_GROUP_MASK) != ACT_GROUP_CUTSCENE && newcam_active) {
+    if ((gMarioState->action & ACT_GROUP_MASK) != ACT_GROUP_CUTSCENE && newcam_active && configCameraFOV) {
         u8 fieldov = m->forwardVel > 0.f ? m->forwardVel / 4.f : 0.f;
         s16 zoom_speed = newcam_distance_target - ((m->forwardVel > 0.f ? m->forwardVel : 0.f) * 10.f);
         fieldov = 45.f + (fieldov < 30.f ? fieldov : 30.f);

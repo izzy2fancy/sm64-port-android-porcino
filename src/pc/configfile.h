@@ -6,7 +6,7 @@
 #define CONFIGFILE_DEFAULT "sm64config.txt"
 
 #define MAX_BINDS  3
-#define MAX_VOLUME 127
+#define MAX_VOLUME 100
 
 typedef struct {
     unsigned int x, y, w, h;
@@ -15,10 +15,12 @@ typedef struct {
     bool fullscreen;
     bool exiting_fullscreen;
     bool settings_changed;
+    bool aa_changed;
 } ConfigWindow;
 
 extern ConfigWindow configWindow;
 extern unsigned int configFiltering;
+extern bool         configAntiAliasing;
 extern unsigned int configMasterVolume;
 extern unsigned int configMusicVolume;
 extern unsigned int configSfxVolume;
@@ -54,6 +56,7 @@ extern unsigned int configCameraDegrade;
 extern bool         configCameraInvertX;
 extern bool         configCameraInvertY;
 extern bool         configEnableCamera;
+extern bool         configCameraFOV;
 extern bool         configCameraMouse;
 extern bool         configCameraAnalog;
 #endif
