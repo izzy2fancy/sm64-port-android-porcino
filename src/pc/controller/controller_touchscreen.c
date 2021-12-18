@@ -10,6 +10,7 @@
 #include "game/game_init.h"
 #include "game/memory.h"
 #include "game/segment2.h"
+#include "game/time_trials.h"
 #include "gfx_dimensions.h"
 #include "pc/gfx/gfx_pc.h"
 #include "pc/configfile.h"
@@ -205,7 +206,7 @@ static void DrawSprite(s32 x, s32 y, int scaling) {
 }
 
 void render_touch_controls(void) {
-	if(configInputDisplay){
+	if(configInputDisplay && !(sTimeTrialsCam[0] != 0 || sTimeTrialsCam[1] != 0 || sTimeTrialsCam[2] != 0)){
     Mtx *mtx;
 
     mtx = alloc_display_list(sizeof(*mtx));

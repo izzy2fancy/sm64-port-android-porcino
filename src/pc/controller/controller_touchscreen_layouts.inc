@@ -1,3 +1,7 @@
+#include "game/bettercamera.h"
+#include "pc/controller/controller_mouse.h"
+extern u8 newcam_mouse;
+
 //Not gonna name it .inc.c because of makefile.
 //This file will have more layouts for dynamic controls later.
 
@@ -18,7 +22,7 @@ struct Position GetDefaultAPos() {
 }
 
 struct Position GetDefaultZPos() {
-    struct Position ret = { .x = GFX_DIMENSIONS_RECT_FROM_RIGHT_EDGE(103) << 2, .y = 94 };
+    struct Position ret = { .x = GFX_DIMENSIONS_RECT_FROM_RIGHT_EDGE(103) << 2, .y = newcam_active && newcam_mouse ? 620 : 94 };
     return ret;
 }
 
@@ -33,22 +37,22 @@ struct Position GetDefaultRPos() {
 }
 
 struct Position GetDefaultUpPos() {
-    struct Position ret = { .x = GFX_DIMENSIONS_RECT_FROM_RIGHT_EDGE(15) << 2, .y = 460 };
+    struct Position ret = { .x = GFX_DIMENSIONS_RECT_FROM_RIGHT_EDGE(15) << 2, .y = newcam_active && newcam_mouse ? -460 : 460 };
     return ret;
 }
 
 struct Position GetDefaultDownPos() {
-    struct Position ret = { .x = GFX_DIMENSIONS_RECT_FROM_RIGHT_EDGE(15) << 2, .y = 740 };
+    struct Position ret = { .x = GFX_DIMENSIONS_RECT_FROM_RIGHT_EDGE(15) << 2, .y = newcam_active && newcam_mouse ? -740 : 740 };
     return ret;
 }
 
 struct Position GetDefaultLeftPos() {
-    struct Position ret = { .x = GFX_DIMENSIONS_RECT_FROM_RIGHT_EDGE(103) << 2, .y = 600 };
+    struct Position ret = { .x = GFX_DIMENSIONS_RECT_FROM_RIGHT_EDGE(103) << 2, .y = newcam_active && newcam_mouse ? -600 : 600 };
     return ret;
 }
 
 struct Position GetDefaultRightPos() {
-    struct Position ret = { .x = GFX_DIMENSIONS_RECT_FROM_RIGHT_EDGE(52) << 2, .y = 600 };
+    struct Position ret = { .x = GFX_DIMENSIONS_RECT_FROM_RIGHT_EDGE(52) << 2, .y = newcam_active && newcam_mouse ? -600 : 600 };
     return ret;
 }
 

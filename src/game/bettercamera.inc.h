@@ -383,8 +383,8 @@ static void newcam_rotate_button(void) {
     }
 
     if (newcam_mouse == 1 && newcam_mouse_to_stick == 0) {
-        newcam_yaw += ivrt(0) * mouse_x * configCameraXSens;
-        newcam_tilt += ivrt(1) * mouse_y * configCameraYSens;
+        newcam_yaw += ivrt(0) * mouse_x * 2 * configCameraXSens;
+        newcam_tilt += ivrt(1) * mouse_y * 2 * configCameraYSens;
     }
 }
 
