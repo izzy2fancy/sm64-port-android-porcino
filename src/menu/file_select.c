@@ -21,6 +21,7 @@
 #include "game/spawn_object.h"
 #include "sm64.h"
 #include "text_strings.h"
+#include "game/time_trials.h"
 
 #include "eu_translation.h"
 #ifdef VERSION_EU
@@ -2989,5 +2990,6 @@ s32 lvl_init_menu_values_and_cursor_pos(UNUSED s32 arg, UNUSED s32 unused) {
  */
 s32 lvl_update_obj_and_load_file_selected(UNUSED s32 arg, UNUSED s32 unused) {
     area_update_objects();
+    sTimeTrialsEnabled = save_file_get_total_star_count(sSelectedFileNum - 1, 0, 24) > 119 ? true : false;
     return sSelectedFileNum;
 }

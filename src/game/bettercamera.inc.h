@@ -10,6 +10,7 @@
 #include "engine/surface_collision.h"
 #include "pc/configfile.h"
 #include "pc/controller/controller_mouse.h"
+#include "time_trials.h"
 
 #if defined(__MINGW32__) && !defined(__MINGW64_VERSION_MAJOR) 
 //quick and dirty fix for some older MinGW.org mingwrt
@@ -566,6 +567,9 @@ static void newcam_set_pan(void) {
 }
 
 static void newcam_position_cam(void) {
+    bool ghost = false;
+    if (sTimeTrialsCam[0] != 0 || sTimeTrialsCam[1] != 0 || sTimeTrialsCam[2] != 0)
+        ghost = true;
     f32 floorY = 0;
     f32 floorY2 = 0;
     s16 shakeX;
@@ -583,20 +587,20 @@ static void newcam_position_cam(void) {
     newcam_pos_target[2] = gMarioState->pos[2];
     //These will set the position of the camera to where Mario is supposed to be, minus adjustments for where the camera should be, on top of.
     if (newcam_modeflags & NC_FLAG_POSX)
-        newcam_pos[0] = newcam_pos_target[0]+lengthdir_x(lengthdir_x(newcam_distance,newcam_tilt+shakeX),newcam_yaw+shakeY);
+        newcam_pos[0] = ghost ? (s16) sTimeTrialsCam[0] : newcam_pos_target[0]+lengthdir_x(lengthdir_x(newcam_distance,newcam_tilt+shakeX),newcam_yaw+shakeY);
     if (newcam_modeflags & NC_FLAG_POSZ)
-        newcam_pos[2] = newcam_pos_target[2]+lengthdir_y(lengthdir_x(newcam_distance,newcam_tilt+shakeX),newcam_yaw+shakeY);
+        newcam_pos[2] = ghost ? (s16) sTimeTrialsCam[2] : newcam_pos_target[2]+lengthdir_y(lengthdir_x(newcam_distance,newcam_tilt+shakeX),newcam_yaw+shakeY);
     if (newcam_modeflags & NC_FLAG_POSY)
-        newcam_pos[1] = newcam_pos_target[1]+lengthdir_y(newcam_distance,newcam_tilt+gLakituState.shakeMagnitude[0])+floorY;
+        newcam_pos[1] = ghost ? (s16) sTimeTrialsCam[1] : newcam_pos_target[1]+lengthdir_y(newcam_distance,newcam_tilt+gLakituState.shakeMagnitude[0])+floorY;
     if ((newcam_modeflags & NC_FLAG_FOCUSX) && (newcam_modeflags & NC_FLAG_FOCUSY) && (newcam_modeflags & NC_FLAG_FOCUSZ))
         newcam_set_pan();
     //Set where the camera wants to be looking at. This is almost always the place it's based off, too.
     if (newcam_modeflags & NC_FLAG_FOCUSX)
-        newcam_lookat[0] = newcam_pos_target[0]-newcam_pan_x;
+        newcam_lookat[0] = ghost ? (s16) sTimeTrialsFocus[0] : newcam_pos_target[0]-newcam_pan_x;
     if (newcam_modeflags & NC_FLAG_FOCUSY)
-        newcam_lookat[1] = newcam_pos_target[1]+floorY2;
+        newcam_lookat[1] = ghost ? (s16) sTimeTrialsFocus[1] : newcam_pos_target[1]+floorY2;
     if (newcam_modeflags & NC_FLAG_FOCUSZ)
-        newcam_lookat[2] = newcam_pos_target[2]-newcam_pan_z;
+        newcam_lookat[2] = ghost ? (s16) sTimeTrialsFocus[2] : newcam_pos_target[2]-newcam_pan_z;
 
     if (newcam_modeflags & NC_FLAG_COLLISION) {
         newcam_collision();

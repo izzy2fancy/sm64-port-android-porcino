@@ -1781,6 +1781,9 @@ s32 execute_mario_action(UNUSED struct Object *o) {
             return 0;
         }
 
+        if (sTimeTrialsPos[0] != 0 || sTimeTrialsPos[1] != 0 || sTimeTrialsPos[2] != 0) {
+            return 0;
+        }
         // The function can loop through many action shifts in one frame,
         // which can lead to unexpected sub-frame behavior. Could potentially hang
         // if a loop of actions were found, but there has not been a situation found.
