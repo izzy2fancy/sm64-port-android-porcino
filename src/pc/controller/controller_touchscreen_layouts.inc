@@ -8,47 +8,47 @@ struct Position GetDefaultJoystickPos() {
 }
 
 struct Position GetDefaultStartPos() {
-    struct Position ret = { .x = SCREEN_WIDTH_API / 2.9, .y = 900 };
+    struct Position ret = { .x = SCREEN_WIDTH_API / 2.6, .y = 900 };
     return ret;
 }
 
 struct Position GetDefaultAPos() {
-    struct Position ret = { .x = GFX_DIMENSIONS_RECT_FROM_RIGHT_EDGE(26) << 2, .y = 630 };
+    struct Position ret = { .x = GFX_DIMENSIONS_RECT_FROM_RIGHT_EDGE(70) << 2, .y = 840 };
     return ret;
 }
 
 struct Position GetDefaultZPos() {
-    struct Position ret = { .x = GFX_DIMENSIONS_RECT_FROM_RIGHT_EDGE(56) << 2, .y = 778 };
+    struct Position ret = { .x = GFX_DIMENSIONS_RECT_FROM_RIGHT_EDGE(103) << 2, .y = 94 };
     return ret;
 }
 
 struct Position GetDefaultBPos() {
-    struct Position ret = { .x = GFX_DIMENSIONS_RECT_FROM_RIGHT_EDGE(74) << 2, .y = 602 };
+    struct Position ret = { .x = GFX_DIMENSIONS_RECT_FROM_RIGHT_EDGE(135) << 2, .y = 840 };
     return ret;
 }
 
 struct Position GetDefaultRPos() {
-    struct Position ret = { .x = GFX_DIMENSIONS_RECT_FROM_LEFT_EDGE(20) << 2, .y = 290 };
+    struct Position ret = { .x = GFX_DIMENSIONS_RECT_FROM_LEFT_EDGE(30) << 2, .y = 290 };
     return ret;
 }
 
 struct Position GetDefaultUpPos() {
-    struct Position ret = { .x = GFX_DIMENSIONS_RECT_FROM_RIGHT_EDGE(26) << 2, .y = 210 };
+    struct Position ret = { .x = GFX_DIMENSIONS_RECT_FROM_RIGHT_EDGE(15) << 2, .y = 460 };
     return ret;
 }
 
 struct Position GetDefaultDownPos() {
-    struct Position ret = { .x = GFX_DIMENSIONS_RECT_FROM_RIGHT_EDGE(26) << 2, .y = 420 };
+    struct Position ret = { .x = GFX_DIMENSIONS_RECT_FROM_RIGHT_EDGE(15) << 2, .y = 740 };
     return ret;
 }
 
 struct Position GetDefaultLeftPos() {
-    struct Position ret = { .x = GFX_DIMENSIONS_RECT_FROM_RIGHT_EDGE(100) << 2, .y = 887 };
+    struct Position ret = { .x = GFX_DIMENSIONS_RECT_FROM_RIGHT_EDGE(103) << 2, .y = 600 };
     return ret;
 }
 
 struct Position GetDefaultRightPos() {
-    struct Position ret = { .x = GFX_DIMENSIONS_RECT_FROM_RIGHT_EDGE(14) << 2, .y = 900 };
+    struct Position ret = { .x = GFX_DIMENSIONS_RECT_FROM_RIGHT_EDGE(52) << 2, .y = 600 };
     return ret;
 }
 

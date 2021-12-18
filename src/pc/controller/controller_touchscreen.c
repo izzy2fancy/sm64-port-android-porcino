@@ -71,7 +71,7 @@ void touch_down(struct TouchEvent* event) {
                     }
                     break;
                 case Button:
-                    if (TRIGGER_DETECT(220)) {
+                    if (TRIGGER_DETECT(240)) {
                         ControlElements[i].touchID = event->touchID;
                     }
                     break;
@@ -105,7 +105,7 @@ void touch_motion(struct TouchEvent* event) {
                         ControlElements[i].joyY = y;
                         break;
                     case Button:
-                        if (ControlElements[i].slideTouch && !TRIGGER_DETECT(220)) {
+                        if (ControlElements[i].slideTouch && !TRIGGER_DETECT(240)) {
                             ControlElements[i].slideTouch = 0;
                             ControlElements[i].touchID = 0;
                         }
@@ -117,7 +117,7 @@ void touch_motion(struct TouchEvent* event) {
                 case Joystick:
                     break;
                 case Button:
-                    if (TRIGGER_DETECT(220)) {
+                    if (TRIGGER_DETECT(240)) {
                         ControlElements[i].slideTouch = 1;
                         ControlElements[i].touchID = event->touchID;
                     }
@@ -154,6 +154,10 @@ ALIGNED8 static const u8 texture_button[] = {
 
 ALIGNED8 static const u8 texture_button_dark[] = {
 #include "textures/touchcontrols/touch_button_dark.rgba16.inc.c"
+};
+
+ALIGNED8 static const u8 texture_zeta[] = {
+#include "textures/segment2/segment2.04600.rgba16.inc.c"
 };
 
 //Sprite drawing code stolen from src/game/print.c
@@ -213,7 +217,14 @@ void render_touch_controls(void) {
                     select_button_texture(1);
                 pos = ControlElements[i].GetPos();
                 DrawSprite(pos.x - 8, pos.y, 2);
-                select_char_texture(ControlElements[i].character);
+				if (ControlElements[i].character == 'z')
+				{
+					gDPPipeSync(gDisplayListHead++);
+					gDPSetTextureImage(gDisplayListHead++, G_IM_FMT_RGBA, G_IM_SIZ_16b, 1, texture_zeta);
+					gSPDisplayList(gDisplayListHead++, dl_hud_img_load_tex_block);
+				} else {
+					select_char_texture(ControlElements[i].character);
+				}
                 DrawSprite(pos.x, pos.y, 1);
                 break;
         }
