@@ -154,7 +154,7 @@ ALIGNED8 static const u8 texture_hud_char_Y[] = {
 #include "textures/segment2/segment2.04400.rgba16.inc.c"
 };
 
-#if defined(VERSION_JP) || defined(VERSION_EU) || defined(VERSION_SH)
+#if defined(VERSION_JP) || defined(VERSION_EU) || defined(VERSION_SH) || defined(VERSION_US)
 ALIGNED8 static const u8 texture_hud_char_Z[] = {
 #include "textures/segment2/segment2.04600.rgba16.inc.c"
 };
@@ -1800,6 +1800,14 @@ ALIGNED8 static const u8 texture_hud_char_arrow_down[] = {
 #include "textures/segment2/segment2.081D0.rgba16.inc.c"
 };
 
+ALIGNED8 static const u8 texture_hud_char_arrow_left[] = {
+#include "textures/segment2/segment2.08B50.rgba16.inc.c"
+};
+
+ALIGNED8 static const u8 texture_hud_char_arrow_right[] = {
+#include "textures/segment2/segment2.08BD0.rgba16.inc.c"
+};
+
 // Main HUD print table 0x02008250-0x02008337
 const u8 *const main_hud_lut[] = {
 #ifdef VERSION_EU
@@ -1827,7 +1835,7 @@ const u8 *const main_hud_lut[] = {
     texture_hud_char_K, texture_hud_char_L, texture_hud_char_M, texture_hud_char_N,
     texture_hud_char_O, texture_hud_char_P,               0x0, texture_hud_char_R,
     texture_hud_char_S, texture_hud_char_T, texture_hud_char_U,               0x0,
-    texture_hud_char_W,               0x0, texture_hud_char_Y,               0x0,
+    texture_hud_char_W,               0x0, texture_hud_char_Y, texture_hud_char_Z,
                   0x0,               0x0,               0x0,               0x0,
                   0x0,               0x0,               0x0,               0x0,
                   0x0,               0x0,               0x0,               0x0,
@@ -2072,7 +2080,7 @@ const u8 *const main_credits_font_lut[] = {
 // HUD camera table 0x020087CC-0x020087E3
 const u8 *const main_hud_camera_lut[] = {
     texture_hud_char_camera, texture_hud_char_mario_head, texture_hud_char_lakitu, texture_hud_char_no_camera,
-    texture_hud_char_arrow_up, texture_hud_char_arrow_down,
+    texture_hud_char_arrow_up, texture_hud_char_arrow_down, texture_hud_char_arrow_left, texture_hud_char_arrow_right,
 };
 
 // If you change the language here, the following Makefile rule also needs to
