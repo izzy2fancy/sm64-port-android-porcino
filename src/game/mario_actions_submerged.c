@@ -19,6 +19,7 @@
 #ifdef BETTERCAMERA
 #include "pc/controller/controller_mouse.h"
 extern u8 newcam_mouse;
+extern u8 newcam_active;
 #endif
 
 #define MIN_SWIM_STRENGTH 160
@@ -303,7 +304,7 @@ static void update_swimming_pitch(struct MarioState *m) {
 #ifdef BETTERCAMERA
     if (newcam_mouse) stick_mouse_y = (s16)(mouse_y) > 64 ? 64 : (s16)(mouse_y) < -64 ? -64 : (s16)(mouse_y);
 #endif
-    if (m->pos[1] < m->waterLevel - 80) {
+    if (m->pos[1] < m->waterLevel - 80 && newcam_active) {
         targetPitch += lastPitch - (s16)(5.0f * (abs(stick_mouse_y) > abs((int)m->controller->stickY) ? -stick_mouse_y : m->controller->stickY));
         m->faceAngle[0] = targetPitch > 16384 ? 16384 : targetPitch < -16384 ? -16384 : targetPitch;
     } else {
