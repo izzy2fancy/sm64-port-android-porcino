@@ -52,7 +52,7 @@ ConfigWindow configWindow       = {
 };
 unsigned int configFiltering    = 1;          // 0=force nearest, 1=linear, (TODO) 2=three-point
 bool         configAntiAliasing = true;
-unsigned int configMasterVolume = 30; // 0 - MAX_VOLUME
+unsigned int configMasterVolume = 100; // 0 - MAX_VOLUME
 unsigned int configMusicVolume = MAX_VOLUME;
 unsigned int configSfxVolume = MAX_VOLUME;
 unsigned int configEnvVolume = MAX_VOLUME;

@@ -22,7 +22,7 @@ struct Position GetDefaultAPos() {
 }
 
 struct Position GetDefaultZPos() {
-    struct Position ret = { .x = GFX_DIMENSIONS_RECT_FROM_RIGHT_EDGE(103) << 2, .y = newcam_active && newcam_mouse ? 620 : 94 };
+    struct Position ret = { .x = GFX_DIMENSIONS_RECT_FROM_RIGHT_EDGE(90) << 2, .y = 94 };
     return ret;
 }
 

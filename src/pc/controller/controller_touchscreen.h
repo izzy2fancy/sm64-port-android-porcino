@@ -12,6 +12,8 @@ void touch_motion(struct TouchEvent* event);
 void touch_up(struct TouchEvent* event);
 
 extern struct ControllerAPI controller_touchscreen;
+extern s16 touch_x;
+extern s16 touch_y;
 
 #endif
 #endif

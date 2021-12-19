@@ -11,6 +11,7 @@
 #include "game/memory.h"
 #include "game/segment2.h"
 #include "game/time_trials.h"
+#include "game/level_update.h"
 #include "gfx_dimensions.h"
 #include "pc/gfx/gfx_pc.h"
 #include "pc/configfile.h"
@@ -28,6 +29,12 @@
 #define CORRECT_TOUCH_Y(y) (y * SCREEN_HEIGHT_API)
 
 #define JOYSTICK_SIZE 460
+
+s16 before_x;
+s16 before_y;
+s16 touch_x;
+s16 touch_y;
+static u32 timer = 0;
 
 enum ControlElementType {
     Joystick,
@@ -83,6 +90,19 @@ void touch_down(struct TouchEvent* event) {
 
 void touch_motion(struct TouchEvent* event) {
     struct Position pos;
+    if (timer != gGlobalTimer && CORRECT_TOUCH_X(event->x) > SCREEN_WIDTH_API / 2 && CORRECT_TOUCH_Y(event->y) > SCREEN_HEIGHT_API * 2 / 10 && CORRECT_TOUCH_Y(event->y) < SCREEN_HEIGHT_API * 8 / 10) {
+        if (before_x > 0)
+            touch_x = CORRECT_TOUCH_X(event->x) - before_x;
+        before_x = CORRECT_TOUCH_X(event->x);
+        if (before_y > 0)
+            touch_y = CORRECT_TOUCH_Y(event->y) - before_y;
+        if (touch_x < configStickDeadzone / 4)
+            touch_x = 0;
+        if (touch_y < configStickDeadzone / 4)
+            touch_y = 0;
+        before_y = CORRECT_TOUCH_Y(event->y);
+        timer = gGlobalTimer;
+    }
     for(int i = 0; i < ControlElementsLength; i++) {
         pos = ControlElements[i].GetPos();
         if (ControlElements[i].touchID == event->touchID) {
@@ -142,6 +162,10 @@ static void handle_touch_up(int i) {//seperated for when the layout changes
 
 void touch_up(struct TouchEvent* event) {
     struct Position pos;
+    if (gGlobalTimer - timer > 1 || (CORRECT_TOUCH_X(event->x) > SCREEN_WIDTH_API / 2 && CORRECT_TOUCH_Y(event->y) > SCREEN_HEIGHT_API * 2 / 10 && CORRECT_TOUCH_Y(event->y) < SCREEN_HEIGHT_API * 8 / 10)) {
+        touch_x = before_x = 0;
+        touch_y = before_y = 0;
+    }
     for(int i = 0; i < ControlElementsLength; i++) {
         if (ControlElements[i].touchID == event->touchID) {
             handle_touch_up(i);

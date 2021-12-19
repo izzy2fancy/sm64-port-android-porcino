@@ -842,6 +842,7 @@ static void time_trials_update_ghost(struct TimeTrialGhostFrameData *ghostData, 
     ghost->header.gfx.sharedChild = time_trials_get_ghost_mario_graph_node(animData->color);
     time_trials_ghost_update_animation(animData, ghost, m, (u16) ghostData[frame].animIndex, (u16) ghostData[frame].animFrame);
     if (ttfollow && !time_trials_is_end_frame(ghostData, frame + 1) && !moved) {
+        if (frame > 10) {
         sTimeTrialsLevel = level;
         replayplayed = true;
         sTimeTrialsPos[0] = (s16) ghostData[frame].posX;
@@ -899,6 +900,7 @@ static void time_trials_update_ghost(struct TimeTrialGhostFrameData *ghostData, 
     // Set frame
         m->marioObj->header.gfx.unk38.animFrame = MIN((u16) ghostData[frame-1].animFrame, m->marioObj->header.gfx.unk38.curAnim->unk08 - 1);
         //enable_time_stop();
+        }
     } else {
         TimeTrialResetCamera();
         if (ghost != NULL && ghostData[frame].level != (u8) level) obj_mark_for_deletion(ghost);
