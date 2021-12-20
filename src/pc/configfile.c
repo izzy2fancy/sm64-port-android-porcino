@@ -45,7 +45,7 @@ ConfigWindow configWindow       = {
     .h = DESIRED_SCREEN_HEIGHT,
     .vsync = false,
     .reset = false,
-    .fullscreen = false,
+    .fullscreen = true,
     .exiting_fullscreen = false,
     .settings_changed = false,
     .aa_changed = false,
@@ -59,7 +59,7 @@ unsigned int configEnvVolume = MAX_VOLUME;
 
 // Keyboard mappings (VK_ values, by default keyboard/gamepad/mouse)
 unsigned int configKeyA[MAX_BINDS]          = { 0x0039,   0x1000,     0x1103     };
-unsigned int configKeyB[MAX_BINDS]          = { 0x0021,   0x1002,     0x1101     };
+unsigned int configKeyB[MAX_BINDS]          = { 0x0021,   0x1002,     VK_INVALID };
 unsigned int configKeyStart[MAX_BINDS]      = { 0x001C,   0x1006,     VK_INVALID };
 unsigned int configKeyL[MAX_BINDS]          = { 0x002D,   0x1009,     0x1104     };
 unsigned int configKeyR[MAX_BINDS]          = { 0x002E,   0x100A,     0x101B     };
