@@ -98,9 +98,9 @@ void touch_motion(struct TouchEvent* event) {
         before_x = CORRECT_TOUCH_X(event->x);
         if (before_y > 0)
             touch_y = CORRECT_TOUCH_Y(event->y) - before_y;
-        if (touch_x < (s16)configStickDeadzone / 4)
+        if (touch_x < configStickDeadzone / 4)
             touch_x = 0;
-        if (touch_y < (s16)configStickDeadzone / 4)
+        if (touch_y < configStickDeadzone / 4)
             touch_y = 0;
         before_y = CORRECT_TOUCH_Y(event->y);
         timer = gGlobalTimer;
