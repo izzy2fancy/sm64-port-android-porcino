@@ -34,8 +34,6 @@ s16 before_x;
 s16 before_y;
 s16 touch_x;
 s16 touch_y;
-s16 touch_cam_x;
-s16 touch_cam_y;
 s16 touch_cam_last_x;
 s16 touch_cam_last_y;
 static u32 timer = 0;
@@ -100,14 +98,10 @@ void touch_motion(struct TouchEvent* event) {
         before_x = CORRECT_TOUCH_X(event->x);
         if (before_y > 0)
             touch_y = CORRECT_TOUCH_Y(event->y) - before_y;
-        if (touch_x < configStickDeadzone / 4)
+        if (touch_x < (s16)configStickDeadzone / 4)
             touch_x = 0;
-        else
-            touch_cam_x = CORRECT_TOUCH_X(event->x);
-        if (touch_y < configStickDeadzone / 4)
+        if (touch_y < (s16)configStickDeadzone / 4)
             touch_y = 0;
-        else
-            touch_cam_y = CORRECT_TOUCH_Y(event->y);
         before_y = CORRECT_TOUCH_Y(event->y);
         timer = gGlobalTimer;
     }
@@ -170,10 +164,9 @@ static void handle_touch_up(int i) {//seperated for when the layout changes
 }
 
 void touch_up(struct TouchEvent* event) {
-    struct Position pos;
     if (gGlobalTimer - timer > 1 || (CORRECT_TOUCH_X(event->x) > SCREEN_WIDTH_API / 2 && CORRECT_TOUCH_Y(event->y) > SCREEN_HEIGHT_API * 2 / 10 && CORRECT_TOUCH_Y(event->y) < SCREEN_HEIGHT_API * 8 / 10)) {
-        touch_x = before_x = touch_cam_x = 0;
-        touch_y = before_y = touch_cam_y = 0;
+        touch_x = before_x = 0;
+        touch_y = before_y = 0;
     }
     for(int i = 0; i < ControlElementsLength; i++) {
         if (ControlElements[i].touchID == event->touchID) {
@@ -213,7 +206,6 @@ ALIGNED8 static const u8 texture_right[] = {
 //Sprite drawing code stolen from src/game/print.c
 
 static void select_button_texture(int dark) {
-    const u8 *const *glyphs = segmented_to_virtual(main_hud_lut);
 
     gDPPipeSync(gDisplayListHead++);
     if (!dark) {
@@ -261,9 +253,9 @@ void render_touch_controls(void) {
                 pos = ControlElements[i].GetPos();
                 DrawSprite(pos.x, pos.y, 3);
                 DrawSprite(pos.x + 4 + ControlElements[i].joyX, pos.y + 4 + ControlElements[i].joyY, 2);
-                if (touch_cam_x > 0 || touch_cam_y > 0) {
-                    touch_cam_last_x = touch_cam_x > 0 ? touch_cam_x : touch_cam_last_x;
-                    touch_cam_last_y = touch_cam_y > 0 ? touch_cam_y : touch_cam_last_y;
+                if (before_x > 0 || before_y > 0) {
+                    touch_cam_last_x = before_x > 0 ? before_x : touch_cam_last_x;
+                    touch_cam_last_y = before_y > 0 ? before_y : touch_cam_last_y;
                     DrawSprite(touch_cam_last_x, touch_cam_last_y, 2);
                 }
                 break;
