@@ -941,6 +941,7 @@ void update_hud_values(void) {
         } else {
             gHudDisplay.flags &= ~HUD_DISPLAY_FLAG_EMPHASIZE_POWER;
         }
+        if (gMarioState->numStars == 120) configLives = gMarioState->numLives > 4 ? gMarioState->numLives : 4;
     }
 }
 
