@@ -36,6 +36,8 @@ s16 touch_x;
 s16 touch_y;
 s16 touch_cam_last_x;
 s16 touch_cam_last_y;
+u8 swap_r;
+u8 swap_start;
 static u32 timer = 0;
 
 enum ControlElementType {
@@ -112,6 +114,8 @@ void touch_motion(struct TouchEvent* event) {
                 switch (ControlElements[i].type) {
                     case Joystick:
                         ; //workaround
+                        if (!swap_r) ControlElements[10].touchID = ControlElements[10].slideTouch = 0;
+                        swap_r = 1;
                         s32 x,y;
                         x = CORRECT_TOUCH_X(event->x) - pos.x;
                         y = CORRECT_TOUCH_Y(event->y) - pos.y;
@@ -155,8 +159,14 @@ static void handle_touch_up(int i) {//seperated for when the layout changes
     ControlElements[i].touchID = 0;
     switch (ControlElements[i].type) {
         case Joystick:
-            ControlElements[i].joyX = 0;
-            ControlElements[i].joyY = 0;
+            if (!ControlElements[10].slideTouch && !ControlElements[10].touchID) {
+                ControlElements[i].joyX = 0;
+                ControlElements[i].joyY = 0;
+            } else {
+                ControlElements[i].joyY = 255;
+                ControlElements[i].joyX = 0;
+            }
+            swap_r = 0;
             break;
         case Button:
             break;
@@ -231,6 +241,7 @@ static void DrawSprite(s32 x, s32 y, int scaling) {
 }
 
 void render_touch_controls(void) {
+    swap_start = ControlElements[0].joyY == 255 ? 1 : 0;
 	if(configInputDisplay && !(sTimeTrialsCam[0] != 0 || sTimeTrialsCam[1] != 0 || sTimeTrialsCam[2] != 0)){
     Mtx *mtx;
 
@@ -252,7 +263,7 @@ void render_touch_controls(void) {
             case Joystick:
                 pos = ControlElements[i].GetPos();
                 DrawSprite(pos.x, pos.y, 3);
-                DrawSprite(pos.x + 4 + ControlElements[i].joyX, pos.y + 4 + ControlElements[i].joyY, 2);
+                DrawSprite(pos.x + 4 + ControlElements[i].joyX, pos.y + 4 + ControlElements[i].joyY * (ControlElements[i].joyY == 255 ? -1 : 1), 2);
                 if (before_x > 0 || before_y > 0) {
                     touch_cam_last_x = before_x > 0 ? before_x : touch_cam_last_x;
                     touch_cam_last_y = before_y > 0 ? before_y : touch_cam_last_y;
