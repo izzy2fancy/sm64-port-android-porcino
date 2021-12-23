@@ -1,6 +1,5 @@
 #include "game/bettercamera.h"
 #include "pc/controller/controller_mouse.h"
-#include "pc/controller/controller_touchscreen.h"
 extern u8 newcam_mouse;
 
 //Not gonna name it .inc.c because of makefile.

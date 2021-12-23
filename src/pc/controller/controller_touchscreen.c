@@ -145,7 +145,7 @@ void touch_motion(struct TouchEvent* event) {
                     break;
                 case Button:
                     if (TRIGGER_DETECT(240)) {
-                        if (ControlElements[i].character == 'b')
+                        if (ControlElements[i].character == 'b' || ControlElements[i].character == 'f')
                             ControlElements[i].slideTouch = 1;
                         ControlElements[i].touchID = event->touchID;
                     }
