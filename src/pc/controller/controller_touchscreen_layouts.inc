@@ -7,17 +7,12 @@ extern u8 newcam_mouse;
 
 //DEFAULT
 struct Position GetDefaultJoystickPos() {
-    struct Position ret = { .x = GFX_DIMENSIONS_RECT_FROM_LEFT_EDGE(70) << 2, .y = 690 };
+    struct Position ret = { .x = GFX_DIMENSIONS_RECT_FROM_LEFT_EDGE(70) << 2, .y = 710 };
     return ret;
 }
 
 struct Position GetDefaultStartPos() {
-    struct Position ret = { .x = SCREEN_WIDTH_API / 2.6, .y = swap_start ? -900 : 900 };
-    return ret;
-}
-
-struct Position GetDefaultAAPos() {
-    struct Position ret = { .x = SCREEN_WIDTH_API / 2.6, .y = swap_start ? 900 : -900 };
+    struct Position ret = { .x = 380, .y = swap_start ? -900 : 900 };
     return ret;
 }
 
@@ -27,7 +22,7 @@ struct Position GetDefaultAPos() {
 }
 
 struct Position GetDefaultZPos() {
-    struct Position ret = { .x = GFX_DIMENSIONS_RECT_FROM_RIGHT_EDGE(90) << 2, .y = 94 };
+    struct Position ret = { .x = GFX_DIMENSIONS_RECT_FROM_LEFT_EDGE(30) << 2, .y = 94 };
     return ret;
 }
 
@@ -37,12 +32,7 @@ struct Position GetDefaultBPos() {
 }
 
 struct Position GetDefaultRPos() {
-    struct Position ret = { .x = GFX_DIMENSIONS_RECT_FROM_LEFT_EDGE(70) << 2, .y = swap_r ? -250 : 250 };
-    return ret;
-}
-
-struct Position GetDefaultFPos() {
-    struct Position ret = { .x = GFX_DIMENSIONS_RECT_FROM_LEFT_EDGE(70) << 2, .y = swap_r ? 250 : -250 };
+    struct Position ret = { .x = GFX_DIMENSIONS_RECT_FROM_LEFT_EDGE(15) << 2, .y = swap_start ? -250 : 400 };
     return ret;
 }
 
@@ -76,7 +66,5 @@ static struct ControlElement ControlElementsDefault[] = {
 {.type = Button, .GetPos = GetDefaultUpPos, .character = 'u', .buttonID = U_CBUTTONS},
 {.type = Button, .GetPos = GetDefaultDownPos, .character = 'd', .buttonID = D_CBUTTONS},
 {.type = Button, .GetPos = GetDefaultLeftPos, .character = 'l', .buttonID = L_CBUTTONS},
-{.type = Button, .GetPos = GetDefaultRightPos, .character = 'e', .buttonID = R_CBUTTONS},
-{.type = Button, .GetPos = GetDefaultFPos, .character = 'f', .buttonID = STICK_UP},
-{.type = Button, .GetPos = GetDefaultAAPos, .character = 'a', .buttonID = A_BUTTON}
+{.type = Button, .GetPos = GetDefaultRightPos, .character = 'e', .buttonID = R_CBUTTONS}
 };

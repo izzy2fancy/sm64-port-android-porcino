@@ -28,7 +28,7 @@
 #define CORRECT_TOUCH_X(x) ((x * (RIGHT_EDGE - LEFT_EDGE)) + LEFT_EDGE)
 #define CORRECT_TOUCH_Y(y) (y * SCREEN_HEIGHT_API)
 
-#define JOYSTICK_SIZE 460
+#define JOYSTICK_SIZE 420
 
 s16 before_x;
 s16 before_y;
@@ -36,7 +36,6 @@ s16 touch_x;
 s16 touch_y;
 s16 touch_cam_last_x;
 s16 touch_cam_last_y;
-u8 swap_r;
 u8 swap_start;
 static u32 timer = 0;
 
@@ -94,7 +93,7 @@ void touch_down(struct TouchEvent* event) {
 
 void touch_motion(struct TouchEvent* event) {
     struct Position pos;
-    if (timer != gGlobalTimer && CORRECT_TOUCH_X(event->x) > SCREEN_WIDTH_API / 2 && CORRECT_TOUCH_Y(event->y) > SCREEN_HEIGHT_API * 2 / 10 && CORRECT_TOUCH_Y(event->y) < SCREEN_HEIGHT_API * 8 / 10) {
+    if (timer != gGlobalTimer && CORRECT_TOUCH_X(event->x) > SCREEN_WIDTH_API / 2 && CORRECT_TOUCH_Y(event->y) < SCREEN_HEIGHT_API * 8 / 10) {
         if (before_x > 0)
             touch_x = CORRECT_TOUCH_X(event->x) - before_x;
         before_x = CORRECT_TOUCH_X(event->x);
@@ -114,8 +113,6 @@ void touch_motion(struct TouchEvent* event) {
                 switch (ControlElements[i].type) {
                     case Joystick:
                         ; //workaround
-                        if (!swap_r) ControlElements[10].touchID = ControlElements[10].slideTouch = 0;
-                        swap_r = 1;
                         s32 x,y;
                         x = CORRECT_TOUCH_X(event->x) - pos.x;
                         y = CORRECT_TOUCH_Y(event->y) - pos.y;
@@ -159,14 +156,8 @@ static void handle_touch_up(int i) {//seperated for when the layout changes
     ControlElements[i].touchID = 0;
     switch (ControlElements[i].type) {
         case Joystick:
-            if (!ControlElements[10].slideTouch && !ControlElements[10].touchID) {
-                ControlElements[i].joyX = 0;
-                ControlElements[i].joyY = 0;
-            } else {
-                ControlElements[i].joyY = 255;
-                ControlElements[i].joyX = 0;
-            }
-            swap_r = 0;
+            ControlElements[i].joyX = 0;
+            ControlElements[i].joyY = 0;
             break;
         case Button:
             break;
@@ -174,7 +165,7 @@ static void handle_touch_up(int i) {//seperated for when the layout changes
 }
 
 void touch_up(struct TouchEvent* event) {
-    if (gGlobalTimer - timer > 1 || (CORRECT_TOUCH_X(event->x) > SCREEN_WIDTH_API / 2 && CORRECT_TOUCH_Y(event->y) > SCREEN_HEIGHT_API * 2 / 10 && CORRECT_TOUCH_Y(event->y) < SCREEN_HEIGHT_API * 8 / 10)) {
+    if (gGlobalTimer - timer > 1 || (CORRECT_TOUCH_X(event->x) > SCREEN_WIDTH_API / 2 && CORRECT_TOUCH_Y(event->y) < SCREEN_HEIGHT_API * 8 / 10)) {
         touch_x = before_x = 0;
         touch_y = before_y = 0;
     }
@@ -241,7 +232,7 @@ static void DrawSprite(s32 x, s32 y, int scaling) {
 }
 
 void render_touch_controls(void) {
-    swap_start = ControlElements[0].joyY == 255 ? 1 : 0;
+    swap_start = ControlElements[0].joyY == 0 && ControlElements[0].joyX == 0 ? 0 : 1;
 	if(configInputDisplay && !(sTimeTrialsCam[0] != 0 || sTimeTrialsCam[1] != 0 || sTimeTrialsCam[2] != 0)){
     Mtx *mtx;
 
@@ -263,7 +254,7 @@ void render_touch_controls(void) {
             case Joystick:
                 pos = ControlElements[i].GetPos();
                 DrawSprite(pos.x, pos.y, 3);
-                DrawSprite(pos.x + 4 + ControlElements[i].joyX, pos.y + 4 + ControlElements[i].joyY * (ControlElements[i].joyY == 255 ? -1 : 1), 2);
+                DrawSprite(pos.x + 4 + ControlElements[i].joyX, pos.y + 4 + ControlElements[i].joyY, 2);
                 if (before_x > 0 || before_y > 0) {
                     touch_cam_last_x = before_x > 0 ? before_x : touch_cam_last_x;
                     touch_cam_last_y = before_y > 0 ? before_y : touch_cam_last_y;
