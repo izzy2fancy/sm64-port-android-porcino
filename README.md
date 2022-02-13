@@ -1,4 +1,6 @@
-https://raw.githubusercontent.com/porcino/sm64-port-android/custom/preview.mp4
+https://user-images.githubusercontent.com/58743577/153742648-51787e63-eb45-4825-be48-cd1980f85442.mp4
+
+
 
 # sm64ex Android Port
 If you want to compile Super Mario 64 for Android on PC you'll probably want to clone [this repo](https://github.com/VDavid003/sm64-port-android-base) instead!
