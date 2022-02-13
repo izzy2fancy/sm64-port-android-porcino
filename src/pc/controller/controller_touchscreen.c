@@ -93,7 +93,7 @@ void touch_down(struct TouchEvent* event) {
 
 void touch_motion(struct TouchEvent* event) {
     struct Position pos;
-    if (timer != gGlobalTimer && CORRECT_TOUCH_X(event->x) > SCREEN_WIDTH_API / 2 && CORRECT_TOUCH_Y(event->y) < SCREEN_HEIGHT_API * 8 / 10) {
+    if (timer != gGlobalTimer && CORRECT_TOUCH_X(event->x) > SCREEN_WIDTH_API / 2 && CORRECT_TOUCH_Y(event->y) < SCREEN_HEIGHT_API * 7 / 10) {
         if (before_x > 0)
             touch_x = CORRECT_TOUCH_X(event->x) - before_x;
         before_x = CORRECT_TOUCH_X(event->x);
@@ -165,7 +165,7 @@ static void handle_touch_up(int i) {//seperated for when the layout changes
 }
 
 void touch_up(struct TouchEvent* event) {
-    if (gGlobalTimer - timer > 1 || (CORRECT_TOUCH_X(event->x) > SCREEN_WIDTH_API / 2 && CORRECT_TOUCH_Y(event->y) < SCREEN_HEIGHT_API * 8 / 10)) {
+    if (gGlobalTimer - timer > 1 || (CORRECT_TOUCH_X(event->x) > SCREEN_WIDTH_API / 2 && CORRECT_TOUCH_Y(event->y) < SCREEN_HEIGHT_API * 7 / 10)) {
         touch_x = before_x = 0;
         touch_y = before_y = 0;
     }

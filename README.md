@@ -1,3 +1,5 @@
+https://raw.githubusercontent.com/porcino/sm64-port-android/custom/preview.mp4
+
 # sm64ex Android Port
 If you want to compile Super Mario 64 for Android on PC you'll probably want to clone [this repo](https://github.com/VDavid003/sm64-port-android-base) instead!
 If you want to compile on Android using [Termux](https://play.google.com/store/apps/details?id=com.termux), follow these instructions in Termux:

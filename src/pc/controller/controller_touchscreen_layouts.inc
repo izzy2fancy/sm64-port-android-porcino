@@ -7,52 +7,52 @@ extern u8 newcam_mouse;
 
 //DEFAULT
 struct Position GetDefaultJoystickPos() {
-    struct Position ret = { .x = GFX_DIMENSIONS_RECT_FROM_LEFT_EDGE(70) << 2, .y = 710 };
+    struct Position ret = { .x = GFX_DIMENSIONS_RECT_FROM_LEFT_EDGE(90) << 2, .y = 710 };
     return ret;
 }
 
 struct Position GetDefaultStartPos() {
-    struct Position ret = { .x = 380, .y = swap_start ? -900 : 900 };
+    struct Position ret = { .x = GFX_DIMENSIONS_RECT_FROM_LEFT_EDGE(15) << 2 , .y = swap_start ? -900 : 900 };
     return ret;
 }
 
 struct Position GetDefaultAPos() {
-    struct Position ret = { .x = GFX_DIMENSIONS_RECT_FROM_RIGHT_EDGE(70) << 2, .y = 840 };
+    struct Position ret = { .x = GFX_DIMENSIONS_RECT_FROM_RIGHT_EDGE(70) << 2, .y = 820 };
     return ret;
 }
 
 struct Position GetDefaultZPos() {
-    struct Position ret = { .x = GFX_DIMENSIONS_RECT_FROM_LEFT_EDGE(30) << 2, .y = 94 };
+    struct Position ret = { .x = GFX_DIMENSIONS_RECT_FROM_LEFT_EDGE(40) << 2, .y = 94 };
     return ret;
 }
 
 struct Position GetDefaultBPos() {
-    struct Position ret = { .x = GFX_DIMENSIONS_RECT_FROM_RIGHT_EDGE(130) << 2, .y = 840 };
+    struct Position ret = { .x = GFX_DIMENSIONS_RECT_FROM_RIGHT_EDGE(130) << 2, .y = 820 };
     return ret;
 }
 
 struct Position GetDefaultRPos() {
-    struct Position ret = { .x = GFX_DIMENSIONS_RECT_FROM_LEFT_EDGE(15) << 2, .y = swap_start ? -250 : 400 };
+    struct Position ret = { .x = GFX_DIMENSIONS_RECT_FROM_RIGHT_EDGE(15) << 2, .y = 900 };
     return ret;
 }
 
 struct Position GetDefaultUpPos() {
-    struct Position ret = { .x = GFX_DIMENSIONS_RECT_FROM_RIGHT_EDGE(15) << 2, .y = newcam_active && newcam_mouse ? -460 : 460 };
+    struct Position ret = { .x = GFX_DIMENSIONS_RECT_FROM_RIGHT_EDGE(15) << 2, .y = newcam_active && newcam_mouse ? -460 : 440 };
     return ret;
 }
 
 struct Position GetDefaultDownPos() {
-    struct Position ret = { .x = GFX_DIMENSIONS_RECT_FROM_RIGHT_EDGE(15) << 2, .y = newcam_active && newcam_mouse ? -740 : 740 };
+    struct Position ret = { .x = GFX_DIMENSIONS_RECT_FROM_RIGHT_EDGE(15) << 2, .y = newcam_active && newcam_mouse ? -740 : 720 };
     return ret;
 }
 
 struct Position GetDefaultLeftPos() {
-    struct Position ret = { .x = GFX_DIMENSIONS_RECT_FROM_RIGHT_EDGE(103) << 2, .y = newcam_active && newcam_mouse ? -600 : 600 };
+    struct Position ret = { .x = GFX_DIMENSIONS_RECT_FROM_RIGHT_EDGE(103) << 2, .y = newcam_active && newcam_mouse ? -600 : 580 };
     return ret;
 }
 
 struct Position GetDefaultRightPos() {
-    struct Position ret = { .x = GFX_DIMENSIONS_RECT_FROM_RIGHT_EDGE(52) << 2, .y = newcam_active && newcam_mouse ? -600 : 600 };
+    struct Position ret = { .x = GFX_DIMENSIONS_RECT_FROM_RIGHT_EDGE(52) << 2, .y = newcam_active && newcam_mouse ? -600 : 580 };
     return ret;
 }
 
