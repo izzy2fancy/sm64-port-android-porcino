@@ -39,7 +39,7 @@ TARGET_BITS ?= 0
 
 TOUCH_CONTROLS ?= 1
 # Disable better camera by default
-BETTERCAMERA ?= 0
+BETTERCAMERA ?= 1
 # Disable no drawing distance by default
 NODRAWINGDISTANCE ?= 0
 # Disable texture fixes by default (helps with them purists)
