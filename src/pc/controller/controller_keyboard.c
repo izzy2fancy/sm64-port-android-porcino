@@ -1,5 +1,6 @@
 #include <stdbool.h>
 #include <ultra64.h>
+#include <stdlib.h>
 
 #include "controller_api.h"
 
